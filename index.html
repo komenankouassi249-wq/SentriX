@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>SENTRIX V5 – Le Gardien Intelligent (Domotique + OpenCV)</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+/* ========== STYLES COMPLETS ========== */
+:root{
+  --primary:#00f0ff;--secondary:#ff006e;--accent:#8338ec;
+  --success:#00ff88;--warning:#ffbe0b;--danger:#ff4444;
+  --bg:#0a0a0f;--card:#12121a;--card2:#1a1a25;
+  --txt:#fff;--txt2:#a0a0b0;--border:#2a2a3a;
+  --glow:0 0 20px rgba(0,240,255,.3);
+  --grad:linear-gradient(135deg,#00f0ff,#8338ec);
+  --grad2:linear-gradient(135deg,#ff006e,#ffbe0b);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow-x:hidden;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle at 15% 85%,rgba(0,240,255,.06) 0,transparent 50%),radial-gradient(circle at 85% 15%,rgba(131,56,236,.06) 0,transparent 50%);pointer-events:none;z-index:0;}
+.hdr{background:rgba(18,18,26,.95);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;backdrop-filter:blur(12px);border-bottom:1px solid var(--border);}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-ic{width:38px;height:38px;background:var(--grad);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;animation:pglow 2s infinite;}
+@keyframes pglow{0%,100%{box-shadow:var(--glow);}50%{box-shadow:0 0 30px rgba(0,240,255,.6);}}
+.logo-tx{font-family:'Orbitron',sans-serif;font-size:17px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.stat-badge{display:flex;align-items:center;gap:6px;padding:5px 11px;background:var(--card);border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--border);}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--danger);animation:blink 1.5s infinite;}
+.sdot.on{background:var(--success);animation:none;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.ic-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--txt2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;}
+.ic-btn:hover{color:var(--primary);border-color:var(--primary);}
+.nb{position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;min-width:16px;text-align:center;}
+.nav{display:flex;gap:3px;padding:8px 10px;background:var(--card);overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);}
+.nav::-webkit-scrollbar{display:none;}
+.ntab{flex-shrink:0;padding:9px 14px;border-radius:9px;border:none;background:transparent;color:var(--txt2);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:5px;}
+.ntab:hover{background:var(--card2);color:var(--txt);}
+.ntab.act{background:var(--grad);color:#0a0a0f;}
+.main{padding:10px;position:relative;z-index:1;}
+.tc{display:none;animation:fi .3s ease;}
+.tc.act{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.card{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:14px;margin-bottom:10px;}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.ct{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:7px;}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:480px){.cgrid{grid-template-columns:1fr;}}
+.dpad-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;}
+.dpad{display:grid;grid-template-columns:repeat(3,68px);grid-template-rows:repeat(3,68px);gap:7px;}
+.db{width:68px;height:68px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--txt);font-size:21px;cursor:pointer;transition:.13s;display:flex;align-items:center;justify-content:center;user-select:none;}
+.db:hover{background:var(--card2);border-color:var(--primary);color:var(--primary);}
+.db:active,.db.pr{transform:scale(.93);background:var(--primary);color:#0a0a0f;border-color:var(--primary);box-shadow:var(--glow);}
+.db.stp{background:var(--danger);border-color:var(--danger);color:#fff;}
+.de{visibility:hidden;}
+.sl-wrap{width:100%;max-width:210px;}
+.sl-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--txt2);margin-bottom:6px;}
+input[type=range]{width:100%;height:7px;-webkit-appearance:none;appearance:none;background:var(--border);border-radius:4px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:var(--grad);border-radius:50%;cursor:pointer;box-shadow:var(--glow);}
+.qa{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;}
+.ab{padding:11px 8px;border-radius:11px;border:1px solid var(--border);background:var(--card);color:var(--txt);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:5px;}
+.ab:hover{background:var(--card2);border-color:var(--primary);}
+.ab.act{background:var(--primary);color:#0a0a0f;border-color:var(--primary);}
+.ab.dng{border-color:var(--danger);color:var(--danger);}
+.ab.dng:hover{background:var(--danger);color:#fff;}
+.ab.wrn{border-color:var(--warning);color:var(--warning);}
+.ab.wrn:hover{background:var(--warning);color:#0a0a0f;}
+.chat-box{height:420px;display:flex;flex-direction:column;}
+.msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:10px;background:rgba(0,0,0,.25);border-radius:11px;margin-bottom:10px;scroll-behavior:smooth;}
+.msg{max-width:88%;padding:9px 13px;border-radius:14px;font-size:14px;line-height:1.5;animation:fi .3s ease;}
+.msg.u{align-self:flex-end;background:var(--grad);color:#0a0a0f;border-bottom-right-radius:3px;}
+.msg.b{align-self:flex-start;background:var(--card2);border:1px solid var(--border);border-bottom-left-radius:3px;}
+.msg.sys{align-self:center;background:rgba(131,56,236,.2);border:1px solid var(--accent);font-size:11px;padding:6px 11px;border-radius:11px;text-align:center;}
+.msg.cmd{font-family:'JetBrains Mono',monospace;font-size:11px;background:rgba(0,255,136,.1);border:1px solid var(--success);color:var(--success);align-self:flex-start;}
+.msg.err{align-self:flex-start;background:rgba(255,68,68,.1);border:1px solid var(--danger);color:var(--danger);}
+.ci{display:flex;gap:7px;}
+.cinp{flex:1;padding:11px 14px;border-radius:11px;border:1px solid var(--border);background:var(--card);color:var(--txt);font-family:'Rajdhani',sans-serif;font-size:16px;outline:none;transition:.2s;}
+.cinp:focus{border-color:var(--primary);}
+.cinp::placeholder{color:var(--txt2);}
+.sbtn{width:46px;height:46px;border-radius:11px;border:none;background:var(--grad);color:#0a0a0f;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.sbtn:disabled{opacity:.5;cursor:not-allowed;}
+.vbtn{width:46px;height:46px;border-radius:11px;border:1px solid var(--secondary);background:transparent;color:var(--secondary);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.vbtn.rec{background:var(--secondary);color:#fff;animation:pulse .8s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+.typing{display:flex;gap:4px;align-items:center;padding:9px 13px;}
+.td2{width:6px;height:6px;border-radius:50%;background:var(--txt2);animation:ty 1.2s infinite;}
+.td2:nth-child(2){animation-delay:.2s;}.td2:nth-child(3){animation-delay:.4s;}
+@keyframes ty{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-7px);}}
+.api-ind{font-size:11px;color:var(--txt2);text-align:right;margin-bottom:5px;}
+.api-ind span{color:var(--success);}
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;}
+.sc{background:rgba(0,0,0,.3);border-radius:11px;padding:13px;border:1px solid var(--border);text-align:center;transition:.2s;}
+.sc:hover{border-color:var(--primary);}
+.si{font-size:22px;margin-bottom:7px;color:var(--primary);}
+.sv{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;margin-bottom:3px;}
+.sl{font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:.8px;}
+.sc.warn .sv{color:var(--warning);}
+.sc.dng  .sv{color:var(--danger);}
+.sbar{width:100%;height:4px;background:var(--border);border-radius:2px;margin-top:7px;overflow:hidden;}
+.sbf{height:100%;border-radius:2px;background:var(--grad);transition:width .5s ease;}
+.cam-c{position:relative;background:#000;border-radius:11px;overflow:hidden;aspect-ratio:16/9;width:100%;}
+.cam-c iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;object-fit:fill;image-rendering:crisp-edges;}
+.cam-feed{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:fill;image-rendering:crisp-edges;}
+.cam-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e,#0a0a0f);color:var(--txt2);}
+.cam-ph i{font-size:44px;margin-bottom:10px;opacity:.4;}
+.cam-ov{position:absolute;top:8px;right:8px;display:flex;gap:5px;}
+.cam-bz{background:rgba(0,0,0,.75);border:1px solid var(--border);padding:3px 8px;border-radius:6px;font-size:10px;display:flex;align-items:center;gap:4px;}
+.lv-dot{width:6px;height:6px;border-radius:50%;background:var(--danger);animation:blink 1s infinite;}
+.cam-btns{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap;}
+.wl{max-height:280px;overflow-y:auto;}
+.wi{display:flex;align-items:center;justify-content:space-between;padding:11px;border-radius:9px;background:rgba(0,0,0,.2);margin-bottom:7px;cursor:pointer;transition:.2s;border:1px solid transparent;}
+.wi:hover{background:var(--card2);border-color:var(--primary);}
+.wi.sel{border-color:var(--primary);}
+.wi-info{display:flex;align-items:center;gap:10px;}
+.wn{font-weight:600;}
+.wsig{color:var(--success);}
+.wsig.med{color:var(--warning);}
+.wsig.wk{color:var(--danger);}
+.ir-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.irb{padding:13px 7px;border-radius:11px;border:1px solid var(--border);background:var(--card);color:var(--txt);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:.2s;text-align:center;}
+.irb:hover{border-color:var(--warning);color:var(--warning);}
+.irb.lrn{border-color:var(--secondary);background:rgba(255,0,110,.12);animation:pulse .8s infinite;}
+.irb i{display:block;font-size:17px;margin-bottom:4px;}
+.irb .irn{font-size:10px;color:var(--txt2);}
+.irb.hc{border-color:var(--success);}
+.irb.hc .irn{color:var(--success);}
+.al{display:flex;flex-direction:column;gap:7px;max-height:500px;overflow-y:auto;}
+.ai{display:flex;gap:10px;padding:11px;border-radius:9px;background:rgba(0,0,0,.2);border-left:3px solid var(--warning);animation:fi .3s ease;}
+.ai.dng{border-left-color:var(--danger);}
+.ai.inf{border-left-color:var(--primary);}
+.ai.fire{border-left-color:#ff4500;background:rgba(255,69,0,.1);}
+.ai-ic{font-size:18px;color:var(--warning);}
+.ai.dng .ai-ic{color:var(--danger);}
+.ai.fire .ai-ic{color:#ff4500;}
+.ai.inf .ai-ic{color:var(--primary);}
+.ai-c{flex:1;}
+.ai-t{font-weight:700;margin-bottom:3px;}
+.ai-tm{font-size:10px;color:var(--txt2);}
+.ai-m{font-size:12px;color:var(--txt2);margin-top:3px;}
+.ai-photo{width:80px;height:60px;border-radius:6px;object-fit:cover;border:1px solid var(--border);cursor:pointer;}
+.bt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;}
+/* ===== EXERCICES ===== */
+.exo-box{background:rgba(0,240,255,.05);border:1px solid rgba(0,240,255,.2);border-radius:12px;padding:14px;margin-bottom:10px;}
+.exo-result{background:rgba(0,0,0,.3);border-radius:10px;padding:12px;min-height:80px;font-size:13px;line-height:1.6;margin-top:10px;white-space:pre-wrap;}
+.exo-img-prev{width:100%;max-height:160px;object-fit:contain;border-radius:8px;border:1px solid var(--border);margin-bottom:8px;display:none;}
+/* ===== RAPPELS AGE ===== */
+.reminder-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:9px;background:rgba(0,0,0,.2);border-left:3px solid var(--warning);margin-bottom:7px;}
+.reminder-item.done{border-left-color:var(--success);opacity:.6;}
+.rem-info{flex:1;}
+.rem-name{font-weight:700;font-size:13px;}
+.rem-time{font-size:11px;color:var(--txt2);}
+.rem-del{background:none;border:1px solid var(--danger);color:var(--danger);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;}
+/* ===== ALERTE INTRUS ===== */
+.intruder-banner{display:none;background:rgba(255,0,0,.15);border:2px solid var(--danger);border-radius:11px;padding:12px 16px;margin-bottom:10px;animation:intruder-pulse 1s infinite;}
+@keyframes intruder-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,68,68,.4);}50%{box-shadow:0 0 20px 8px rgba(255,68,68,.25);}}
+.bt-dev{display:flex;align-items:center;justify-content:space-between;padding:13px;border-radius:11px;background:rgba(0,0,0,.25);border:1px solid var(--border);transition:.2s;}
+.bt-dev:hover{border-color:var(--accent);}
+.bt-dev.conn{border-color:var(--success);background:rgba(0,255,136,.07);}
+.bt-info{display:flex;align-items:center;gap:10px;}
+.bt-ic{font-size:20px;color:var(--accent);}
+.bt-nm{font-weight:600;font-size:14px;}
+.bt-st{font-size:11px;color:var(--txt2);}
+.fg{margin-bottom:14px;}
+.fl{display:block;font-size:11px;color:var(--txt2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.8px;}
+.fi{width:100%;padding:11px 13px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--txt);font-family:'Rajdhani',sans-serif;font-size:15px;outline:none;transition:.2s;}
+.fi:focus{border-color:var(--primary);}
+.fi::placeholder{color:var(--txt2);}
+.akg{position:relative;}
+.akg .fi{padding-right:46px;font-family:'JetBrains Mono',monospace;font-size:12px;}
+.akt{position:absolute;right:11px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--txt2);cursor:pointer;font-size:15px;}
+.btn{padding:11px 18px;border-radius:9px;border:none;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:7px;}
+.bp{background:var(--grad);color:#0a0a0f;}
+.bp:hover{box-shadow:var(--glow);}
+.bs{background:transparent;border:1px solid var(--border);color:var(--txt);}
+.bs:hover{border-color:var(--primary);color:var(--primary);}
+.bd{background:transparent;border:1px solid var(--danger);color:var(--danger);}
+.bd:hover{background:var(--danger);color:#fff;}
+.bsm{padding:7px 11px;font-size:11px;}
+.bbl{width:100%;justify-content:center;}
+.row{display:flex;gap:7px;align-items:center;}
+.f1{flex:1;}
+.bge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.bg-s{background:rgba(0,255,136,.2);color:var(--success);border:1px solid var(--success);}
+.bg-d{background:rgba(255,68,68,.2);color:var(--danger);border:1px solid var(--danger);}
+.bg-w{background:rgba(255,190,11,.2);color:var(--warning);border:1px solid var(--warning);}
+.bg-p{background:rgba(0,240,255,.2);color:var(--primary);border:1px solid var(--primary);}
+.bg-a{background:rgba(131,56,236,.2);color:var(--accent);border:1px solid var(--accent);}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+.mt8{margin-top:8px;}.mt12{margin-top:12px;}
+.txs{font-size:12px;}.txxs{font-size:10px;}
+.tc2{color:var(--txt2);}
+.ts{color:var(--success);}.td2{color:var(--danger);}.tw{color:var(--warning);}
+.prog{height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.pf{height:100%;border-radius:3px;background:var(--grad);transition:width .4s ease;}
+.settings-sec{margin-bottom:22px;}
+.stit{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.ci2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.ii{background:rgba(0,0,0,.2);border-radius:9px;padding:11px;border:1px solid var(--border);}
+.il{font-size:10px;color:var(--txt2);margin-bottom:3px;text-transform:uppercase;}
+.iv{font-family:'Orbitron',sans-serif;font-size:13px;color:var(--primary);}
+#tc{position:fixed;top:72px;right:10px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none;}
+.tst{padding:11px 14px;border-radius:9px;background:var(--card);border:1px solid var(--border);font-size:12px;max-width:270px;pointer-events:all;animation:fi .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.6);}
+.tst.success{border-color:var(--success);color:var(--success);}
+.tst.error{border-color:var(--danger);color:var(--danger);}
+.tst.warning{border-color:var(--warning);color:var(--warning);}
+.tst.info{border-color:var(--primary);color:var(--primary);}
+.tst.fire{border-color:#ff4500;color:#ff4500;background:rgba(255,69,0,.15);}
+.tst-fd{animation:fo .3s ease forwards;}
+@keyframes fo{to{opacity:0;transform:translateX(15px);}}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;display:none;align-items:center;justify-content:center;padding:14px;}
+.mo.open{display:flex;}
+.md{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:22px;width:100%;max-width:380px;max-height:85vh;overflow-y:auto;}
+.mt{font-family:'Orbitron',sans-serif;font-size:15px;color:var(--primary);margin-bottom:18px;}
+.ma{display:flex;gap:7px;margin-top:18px;justify-content:flex-end;}
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px;}
+.pt{aspect-ratio:4/3;border-radius:7px;overflow:hidden;border:1px solid var(--border);cursor:pointer;position:relative;}
+.pt img{width:100%;height:100%;object-fit:cover;}
+.pt-t{position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,.75);font-size:9px;padding:2px 4px;border-radius:3px;}
+.pt .pt-del{position:absolute;top:3px;right:3px;background:var(--danger);border:none;border-radius:4px;color:#fff;width:18px;height:18px;font-size:9px;cursor:pointer;display:none;align-items:center;justify-content:center;}
+.pt:hover .pt-del{display:flex;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.msg.mistral{align-self:flex-start;background:rgba(255,0,110,.08);border:1px solid rgba(255,0,110,.3);border-bottom-left-radius:3px;}
+.model-badge-mistral{background:rgba(255,0,110,.2);color:#ff6b9d;border:1px solid rgba(255,0,110,.4);border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;}
+.live-center{display:flex;flex-direction:column;align-items:center;gap:20px;padding:10px 0 20px;}
+.mic-btn{width:100px;height:100px;border-radius:50%;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.06em;transition:all .25s;background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(0,212,255,.1));border:2px solid var(--accent);color:#a78bfa;}
+.mic-btn.live{background:linear-gradient(135deg,rgba(255,64,96,.2),rgba(255,100,60,.1));border-color:var(--danger);color:var(--danger);animation:micPulse 1.5s infinite;}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,64,96,.5)}60%{box-shadow:0 0 0 18px rgba(255,64,96,0)}}
+.mic-icon{font-size:2rem;}
+.wave-wrap canvas{width:100%;height:50px;border-radius:8px;background:var(--surface);}
+.live-pill{display:flex;align-items:center;gap:8px;padding:6px 18px;background:var(--card);border:1px solid var(--border);border-radius:30px;font-size:.7rem;}
+.live-pill .ldot{width:6px;height:6px;border-radius:50%;background:var(--muted);transition:background .3s;}
+.live-pill.listening .ldot{background:var(--accent);animation:blink .9s infinite;}
+.live-pill.speaking .ldot{background:var(--success);box-shadow:0 0 6px var(--success);}
+.ai-bar{display:flex;align-items:center;justify-content:center;gap:3px;width:100%;height:40px;}
+.ai-b{width:3px;background:var(--success);border-radius:2px;min-height:3px;opacity:.15;transition:height .05s;}
+.room-indicator{display:flex;align-items:center;gap:14px;background:rgba(0,0,0,.3);border-radius:12px;padding:14px;margin-bottom:12px;}
+.room-dot{width:44px;height:44px;border-radius:50%;background:#333;border:3px solid #555;display:flex;align-items:center;justify-content:center;font-size:20px;transition:.5s;}
+.room-info{flex:1;}
+.room-label{font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:1px;}
+.room-name{font-size:20px;font-weight:700;color:var(--primary);font-family:'Orbitron',sans-serif;}
+.room-color{font-size:11px;color:var(--txt2);}
+.color-map{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px;}
+.color-item{padding:8px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid var(--border);text-align:center;cursor:pointer;transition:.2s;}
+.color-item:hover{border-color:var(--primary);}
+.color-item .ci-emoji{font-size:24px;}
+.color-item .ci-color{font-size:10px;font-weight:600;margin-top:3px;}
+.color-item .ci-room{font-size:9px;color:var(--txt2);}
+.config-switch{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+
+/* === ANALYSE CONTINUE === */
+.live-controls { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+#btnLiveAnalysis { flex: 1; padding: 11px; border-radius: 10px; border: 2px solid var(--accent); background: rgba(131,56,236,.1); color: #a78bfa; font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: .2s; }
+#btnLiveAnalysis.active { border-color: #ff4444; background: rgba(255,68,68,.15); color: #ff8888; }
+#liveFrameCount { font-size: 11px; color: var(--txt2); white-space: nowrap; display: none; }
+#liveAnalysisLog { display: none; margin-top: 8px; max-height: 200px; overflow-y: auto; background: rgba(0,0,0,.35); border: 1px solid var(--border); border-radius: 10px; padding: 10px; font-size: 12px; line-height: 1.8; }
+
+.relay-card.on{border-color:var(--success)!important;background:rgba(0,255,136,.08)!important;}
+.relay-card .relay-icon{transition:.3s;}
+.relay-card.on .relay-icon{filter:brightness(1.5) drop-shadow(0 0 10px rgba(0,255,136,.6));}
+
+.mic-btn.ptt{cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;}
+.mic-btn.ptt.recording{background:linear-gradient(135deg,rgba(255,64,96,.3),rgba(255,100,60,.2));border-color:var(--danger);color:var(--danger);box-shadow:0 0 30px rgba(255,64,96,.4);animation:micPulse 0.8s infinite;}
+</style>
+</head>
+<body>
+
+<div id="tc"></div>
+
+<!-- MODALS -->
+<div class="mo" id="irMo"><div class="md"><div class="mt"><i class="fa-solid fa-satellite-dish"></i> Programmer bouton IR</div><div class="fg"><label class="fl">Nom du bouton</label><input class="fi" id="irNm" placeholder="Ex: TV On"></div><div style="text-align:center;padding:18px 0;"><div style="font-size:44px;margin-bottom:10px;color:var(--warning);"><i class="fa-solid fa-satellite-dish"></i></div><div id="irMoSt" style="font-size:13px;">Cliquez "Démarrer" puis pointez la télécommande.</div></div><div class="fg"><label class="fl">Code IR capturé</label><input class="fi" id="irCd" readonly placeholder="En attente..."></div><div class="ma"><button class="btn bs" onclick="closeMo('irMo')">Annuler</button><button class="btn bp" id="irLrBtn" onclick="startIRLearn()">Démarrer</button><button class="btn" style="background:var(--grad2);color:#fff;display:none;" id="irSvBtn" onclick="saveIRCode()">Sauvegarder</button></div></div></div>
+<div class="mo" id="wifiMo"><div class="md"><div class="mt"><i class="fa-solid fa-wifi"></i> Connexion WiFi</div><div id="wifiMoSSID" style="font-size:15px;font-weight:700;margin-bottom:14px;"></div><div class="fg"><div class="akg"><input class="fi" id="wifiPwd" type="password"><button class="akt" onclick="tvPwd('wifiPwd',this)"><i class="fa-solid fa-eye"></i></button></div></div><div class="ma"><button class="btn bs" onclick="closeMo('wifiMo')">Annuler</button><button class="btn bp" onclick="connectWifi()">Connecter</button></div></div></div>
+<div class="mo" id="photoMo" onclick="closeMo('photoMo')"><img id="photoMoImg" src="" style="max-width:100%;max-height:90vh;border-radius:10px;border:1px solid var(--border);"></div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo"><div class="logo-ic">🤖</div><span class="logo-tx">SENTRIX</span></div>
+  <div class="hdr-right">
+    <div class="stat-badge"><div class="sdot" id="cDot"></div><span id="cTxt">Déconnecté</span></div>
+    <div style="position:relative;"><button class="ic-btn" id="alertBtn"><i class="fa-solid fa-bell"></i><span class="nb" id="alertNb" style="display:none;">0</span></button></div>
+    <button class="ic-btn" id="settingsBtn"><i class="fa-solid fa-gear"></i></button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="ntab act" data-tab="ctrl"><i class="fa-solid fa-gamepad"></i> Contrôle</button>
+  <button class="ntab" data-tab="ai"><i class="fa-solid fa-brain"></i> IA Texte</button>
+  <button class="ntab" data-tab="live"><i class="fa-solid fa-waveform-lines"></i> Live Audio</button>
+  <button class="ntab" data-tab="music"><i class="fa-solid fa-music"></i> Musique</button>
+  <button class="ntab" data-tab="cam"><i class="fa-solid fa-camera"></i> Caméra</button>
+  <button class="ntab" data-tab="sens"><i class="fa-solid fa-microchip"></i> Capteurs</button>
+  <button class="ntab" data-tab="ir"><i class="fa-solid fa-signal"></i> IR</button>
+  <button class="ntab" data-tab="bt"><i class="fa-brands fa-bluetooth-b"></i> Bluetooth</button>
+  <button class="ntab" data-tab="alerts"><i class="fa-solid fa-bell"></i> Alertes</button>
+  <button class="ntab" data-tab="wifi"><i class="fa-solid fa-wifi"></i> WiFi</button>
+  <button class="ntab" data-tab="settings"><i class="fa-solid fa-gear"></i> Config</button>
+  <button class="ntab" data-tab="ligne"><i class="fa-solid fa-route"></i> Ligne</button>
+  <button class="ntab" data-tab="exercices"><i class="fa-solid fa-graduation-cap"></i> Exercices</button>
+  <button class="ntab" data-tab="rappels"><i class="fa-solid fa-clock"></i> Rappels</button>
+  <button class="ntab" data-tab="domotique"><i class="fa-solid fa-plug-circle-bolt"></i> Domotique</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- CONTRÔLE -->
+<div class="tc act" id="tc-ctrl">
+  <div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-gamepad"></i> Direction</span><span id="curCmd" class="bge bg-p">STOP</span></div><div class="cgrid"><div class="dpad-wrap"><div class="dpad"><div class="de"></div><button class="db" id="db-f" onpointerdown="startCmd('forward')" onpointerup="stopCmd()" onpointerleave="stopCmd()"><i class="fa-solid fa-chevron-up"></i></button><div class="de"></div><button class="db" id="db-l" onpointerdown="startCmd('left')" onpointerup="stopCmd()" onpointerleave="stopCmd()"><i class="fa-solid fa-chevron-left"></i></button><button class="db stp" onclick="sendStop()"><i class="fa-solid fa-stop"></i></button><button class="db" id="db-r" onpointerdown="startCmd('right')" onpointerup="stopCmd()" onpointerleave="stopCmd()"><i class="fa-solid fa-chevron-right"></i></button><div class="de"></div><button class="db" id="db-b" onpointerdown="startCmd('backward')" onpointerup="stopCmd()" onpointerleave="stopCmd()"><i class="fa-solid fa-chevron-down"></i></button><div class="de"></div></div><div class="sl-wrap"><div class="sl-lbl"><span><i class="fa-solid fa-gauge"></i> Vitesse</span><span id="spdVal">150</span></div><input type="range" min="50" max="255" value="150" id="spdSl" oninput="updSpd(this.value)"></div></div><div><div class="ct" style="margin-bottom:10px;"><i class="fa-solid fa-bolt"></i> Actions rapides</div><div class="qa"><button class="ab" id="abLed" onclick="togAct('abLed','led','LED')"><i class="fa-solid fa-lightbulb"></i> LED</button><button class="ab" id="abBuz" onclick="togAct('abBuz','buzz','Buzzer')"><i class="fa-solid fa-volume-high"></i> Buzzer</button><button class="ab" onclick="sendServo('pan',0)"><i class="fa-solid fa-rotate-left"></i> Pan 0°</button><button class="ab" onclick="sendServo('pan',180)"><i class="fa-solid fa-rotate-right"></i> Pan 180°</button><button class="ab wrn" onclick="startPatrol()"><i class="fa-solid fa-shield-halved"></i> Patrouille</button><button class="ab dng" onclick="emergStop()"><i class="fa-solid fa-hand"></i> URGENCE</button><button class="ab" onclick="sendServoScan()"><i class="fa-solid fa-radar"></i> Scan servo</button><button class="ab" onclick="takePhoto()"><i class="fa-solid fa-camera"></i> Photo</button></div><div class="divider"></div><div class="ct" style="margin-bottom:10px;"><i class="fa-solid fa-sliders"></i> Pan / Tilt</div><div class="fg"><div class="sl-lbl"><span>Pan ←→</span><span id="panV">90°</span></div><input type="range" min="0" max="180" value="90" id="panSl" oninput="sendServo('pan',this.value)"></div><div class="fg"><div class="sl-lbl"><span>Tilt ↑↓</span><span id="tiltV">90°</span></div><input type="range" min="0" max="180" value="90" id="tiltSl" oninput="sendServo('tilt',this.value)"></div></div></div></div>
+  <div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-plug"></i> Connexion Pi5</span><span id="wsSt" class="bge bg-d">Déconnecté</span></div><div class="row"><input class="fi f1" id="rIP" type="text" placeholder="IP Pi5 (ex: 192.168.1.42)"><input class="fi" id="rPort" type="number" value="8765" style="width:80px;"><button class="btn bp" onclick="connectRobot()"><i class="fa-solid fa-plug"></i></button></div><div class="mt8 txxs tc2" id="wsLog">En attente...</div></div>
+</div>
+
+<!-- IA TEXTE (Gemini + fallback Mistral) -->
+<div class="tc" id="tc-ai">
+  <div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-brain"></i> SentriX IA (Gemini + Mistral)</span><span class="bge bg-p" id="aiModelBadge">Gemini Flash</span></div><div style="font-size:10px;color:var(--txt2);text-align:right;margin-bottom:6px;">Clé active: <span id="akLbl">1/3</span> | <span id="aiFallback" style="color:#ff6b9d;display:none;">→ Mistral 14B</span></div>
+    <div class="chat-box"><div class="msgs" id="chatMsgs"><div class="msg sys">🤖 SentriX — IA Gemini + Mistral active. Je surveille, je décide, j'agis.</div><div class="msg b">Bonjour ! Je suis <strong>SentriX</strong>, votre robot gardien. Je peux analyser la caméra, contrôler le robot, jouer de la musique et discuter. Comment puis-je vous aider ?</div></div><div class="ci"><button class="vbtn" id="vBtn"><i class="fa-solid fa-microphone"></i></button><input class="cinp" id="cInp" type="text" placeholder="Message ou commande..." onkeydown="if(event.key==='Enter')sendChat()"><button class="sbtn" id="sendBtn" onclick="sendChat()"><i class="fa-solid fa-paper-plane"></i></button></div></div></div>
+  <div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-face-smile"></i> Visages connus</span><button class="btn bs bsm" onclick="learnFace()">Apprendre</button></div><div class="row"><input class="fi f1" id="faceName" placeholder="Nom de la personne"><button class="btn bp" onclick="recognizeFace()">Reconnaître</button></div><div id="faceResult" class="mt8 txxs tc2"></div><div id="faceList" class="mt8 txxs tc2"></div></div>
+  <div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-magnifying-glass"></i> Recherche intelligente</span><span id="searchStatus" class="bge bg-d">Inactif</span></div><div class="row"><input class="fi f1" id="searchTarget" placeholder="personne, objet..."><button class="btn bp" id="searchBtn" onclick="startIntelligentSearch()"><i class="fa-solid fa-play"></i></button><button class="btn bd" id="stopSearchBtn" onclick="stopIntelligentSearch()" style="display:none;"><i class="fa-solid fa-stop"></i></button></div><div class="mt8 txxs tc2" id="searchLog">Prêt.</div></div>
+</div>
+
+<!-- LIVE AUDIO (Gemini 3.1 Flash) -->
+<div class="tc" id="tc-live">
+  <div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-waveform-lines"></i> Live Audio (Gemini 3.1)</span><span id="liveStatusBadge" class="bge bg-d">Inactif</span></div><div class="live-center"><button class="mic-btn ptt" id="liveMicBtn" onpointerdown="pttStart()" onpointerup="pttStop()" onpointerleave="pttStop()" disabled><span class="mic-icon" id="liveMicIcon">🎙</span><span id="liveMicLabel">PARLER ↕</span></button><div class="live-pill" id="livePill"><div class="ldot"></div><span id="pillTxt">Non connecté</span></div><canvas id="micCanvas" width="400" height="50" style="width:100%;height:50px;background:#10151f;border-radius:8px;"></canvas><div class="ai-bar" id="aiBar"><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div><div class="ai-b"></div></div></div><div class="fg"><label class="fl">Clé API Gemini (Live)</label><div class="row"><input class="fi f1" id="liveApiKey" type="password" placeholder="Collez votre clé API ici"><button class="btn bs bsm" onclick="toggleLiveKey()">👁</button><button class="btn bp bsm" onclick="connectLive()">Connecter</button><button class="btn bd bsm" onclick="disconnectLive()">Déconn.</button></div></div><div class="fg"><label class="fl">Voix</label><select id="liveVoice" class="fi"><option value="Puck">Puck</option><option value="Charon">Charon</option><option value="Kore">Kore</option><option value="Aoede">Aoede</option></select></div><div class="fg"><label class="fl">Instruction système</label><textarea id="liveSystem" rows="2" class="fi">Je suis SentriX, le robot compagnon. Je contrôle mes déplacements et la domotique en envoyant UNIQUEMENT un JSON à la fin de ma réponse. Le JSON peut être: {"robot_cmd":"forward","speed":200,"duration":3000} {"robot_cmd":"backward","speed":200,"duration":1000} {"robot_cmd":"left","speed":150,"duration":600} {"robot_cmd":"right","speed":150,"duration":600} {"robot_cmd":"stop"} {"robot_cmd":"patrol"} {"robot_cmd":"go_to_room","room":"Cuisine"} {"robot_cmd":"take_photo"} {"robot_cmd":"servo_scan"} {"robot_cmd":"play_music","query":"titre"} {"robot_cmd":"relay","channel":"lumiere","state":true} {"robot_cmd":"relay","channel":"ventilateur","state":false} {"robot_cmd":"relay","channel":"porte","state":true} {"robot_cmd":"set_reminder","person":"Nom","msg":"Prendre médicaments","time":"14:30","repeat":"once"}. Les parametres speed (0-255) et duration (ms) permettent un contrôle précis des mouvements. Pour la domotique: lumiere, ventilateur, porte, reserve. Pour les rappels: repeat=once/daily/hourly. Si pas d'heure, choisir dans 5 min. Je parle à la première personne. Je réponds en français.</textarea></div></div>
+  <div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-comment-dots"></i> Échanges</span><button class="btn bs bsm" onclick="clearLiveLog()">Effacer</button></div><div id="liveChatLog" style="height:200px;overflow-y:auto;background:rgba(0,0,0,.2);border-radius:10px;padding:10px;font-size:12px;"></div></div>
+</div>
+
+<!-- MUSIQUE -->
+<div class="tc" id="tc-music">
+  <div class="card" style="background:linear-gradient(135deg,rgba(131,56,236,.08),rgba(0,240,255,.05));">
+    <div class="ch"><span class="ct"><i class="fa-solid fa-music"></i> Lecteur YouTube (sur le Pi)</span><span id="musicPlayerBadge" class="bge bg-a">⏸ Arrêté</span></div>
+    <div class="fg">
+      <label class="fl">Rechercher et jouer une musique</label>
+      <div class="ci">
+        <input class="cinp" id="musicSearchInp" placeholder="Artiste, chanson... ex: Himra Banger" onkeydown="if(event.key==='Enter')playMusicFromInput()">
+        <button class="sbtn" onclick="playMusicFromInput()"><i class="fa-solid fa-play"></i></button>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--txt2);margin-top:10px;">
+      <i class="fa-solid fa-info-circle"></i> La recherche et la lecture sont effectuées par le Raspberry Pi (yt-dlp + mpg123). Aucune erreur CORS.
+    </div>
+    <div class="divider"></div>
+    <div class="row mt8">
+      <button class="btn bs f1" onclick="stopMusic()"><i class="fa-solid fa-stop"></i> Arrêter</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAMÉRA (iframe) -->
+<div class="tc" id="tc-cam">
+  <div class="intruder-banner" id="intruderBanner">
+    <span style="font-size:18px;">🚨</span> <strong>INTRUS DÉTECTÉ !</strong> — Personne inconnue devant la caméra. Alerte envoyée.
+    <button onclick="document.getElementById('intruderBanner').style.display='none'" style="float:right;background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px;">✕</button>
+  </div>
+  <div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-camera"></i> Flux vidéo Pi5</span><span id="camSt" class="bge bg-d">Hors ligne</span></div>
+    <div class="cam-c" id="camC" style="aspect-ratio:16/9;width:100%;max-width:100%;">
+      <img id="camImg" src="" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="Camera">
+      <div class="cam-ph" id="camPh">
+        <i class="fa-solid fa-video-slash"></i>
+        <p style="font-size:14px;">Caméra non connectée</p>
+        <p class="txxs tc2 mt8">Connectez le Pi5 puis cliquez "Connecter"</p>
+      </div>
+      <div class="cam-ov" id="camOv" style="display:none;">
+        <div class="cam-bz"><div class="lv-dot"></div> LIVE</div>
+        <div class="cam-bz" id="camFps">-- fps</div>
+      </div>
+    </div>
+    <div class="cam-btns">
+      <button class="btn bp bsm" onclick="connCam()"><i class="fa-solid fa-play"></i> Connecter</button>
+      <button class="btn bs bsm" onclick="takePhoto()"><i class="fa-solid fa-camera"></i> Photo</button>
+      <button class="btn bs bsm" onclick="aiScanCam()"><i class="fa-solid fa-eye"></i> Scan IA</button>
+      <button class="btn bs bsm" onclick="exoFromCam()"><i class="fa-solid fa-graduation-cap"></i> Exercice</button>
+      <button class="btn bs bsm" onclick="discCam()"><i class="fa-solid fa-stop"></i> Stop</button>
+    </div>
+    <div class="live-controls">
+      <button id="btnLiveAnalysis" onclick="toggleLiveAnalysis()">
+        <i class="fa-solid fa-circle-play" id="btnLiveIcon"></i>
+        <span id="btnLiveTxt">Démarrer analyse continue</span>
+      </button>
+      <span id="liveFrameCount">0 analyses</span>
+    </div>
+    <div id="liveAnalysisLog"></div>
+  </div>
+  <div class="card" id="photoGal" style="display:none;"><div class="ch"><span class="ct"><i class="fa-solid fa-images"></i> Photos</span><button class="btn bd bsm" onclick="clearPhotos()">Tout effacer</button></div><div class="pg" id="photoList"></div></div>
+</div>
+
+<!-- CAPTEURS -->
+<div class="tc" id="tc-sens">
+  <div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-microchip"></i> Capteurs temps réel</span><button class="btn bs bsm" onclick="reqSens()"><i class="fa-solid fa-rotate"></i> Actualiser</button></div>
+    <div class="sg">
+      <div class="sc" id="sc-dist"><div class="si"><i class="fa-solid fa-ruler"></i></div><div class="sv" id="sv-dist">-- cm</div><div class="sl">Distance HC-SR04</div><div class="sbar"><div class="sbf" id="sbf-dist" style="width:0%"></div></div></div>
+      <div class="sc" id="sc-gas"><div class="si"><i class="fa-solid fa-smog"></i></div><div class="sv" id="sv-gas">--</div><div class="sl">Gaz MQ-2</div><div class="sbar"><div class="sbf" id="sbf-gas" style="width:0%"></div></div></div>
+      <div class="sc" id="sc-bat"><div class="si"><i class="fa-solid fa-battery-three-quarters"></i></div><div class="sv" id="sv-bat">--%</div><div class="sl">Batterie</div><div class="sbar"><div class="sbf" id="sbf-bat" style="width:0%"></div></div></div>
+      <div class="sc" id="sc-tmp"><div class="si"><i class="fa-solid fa-thermometer-half"></i></div><div class="sv" id="sv-tmp">--°C</div><div class="sl">Temp CPU</div><div class="sbar"><div class="sbf" id="sbf-tmp" style="width:0%"></div></div></div>
+      <div class="sc" id="sc-mot"><div class="si"><i class="fa-solid fa-person-running"></i></div><div class="sv" id="sv-mot">Aucun</div><div class="sl">Mouvement</div></div>
+      <div class="sc" id="sc-fire"><div class="si" style="color:var(--danger)"><i class="fa-solid fa-fire"></i></div><div class="sv" id="sv-fire">NON</div><div class="sl">Feu/Gaz</div></div>
+    </div>
+    <div class="mt8 txxs tc2" id="sensUpd">--</div>
+  </div>
+  <div class="card"><div class="ct" style="margin-bottom:10px;"><i class="fa-solid fa-chart-line"></i> Historique distance</div><div id="distChart" style="height:90px;display:flex;align-items:flex-end;gap:2px;background:rgba(0,0,0,.2);border-radius:8px;padding:6px;overflow:hidden;"></div></div>
+</div>
+
+<!-- SUIVEUR DE LIGNE -->
+<div class="tc" id="tc-ligne">
+  <div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-route"></i> Suiveur de ligne OpenCV</span><span id="lineBadge" class="bge bg-d">Arrêté</span></div>
+    <div class="room-indicator"><div class="room-dot" id="roomColorDot">❓</div><div class="room-info"><div class="room-label">PIÈCE ACTUELLE</div><div class="room-name" id="roomName">Inconnue</div><div class="room-color" id="roomColorTxt">Aucune ligne détectée</div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"><button class="btn bp" onclick="startLineFollower()"><i class="fa-solid fa-play"></i> Démarrer</button><button class="btn bd" onclick="stopLineFollower()"><i class="fa-solid fa-stop"></i> Arrêter</button></div>
+    <div class="ct" style="margin-bottom:10px;"><i class="fa-solid fa-location-dot"></i> Envoyer dans une pièce</div>
+    <div class="row"><input class="fi f1" id="customRoom" placeholder="Salon, Cuisine, Chambre..."><button class="btn bp" onclick="navigateToRoom()">Envoyer</button></div>
+    <div class="mt8 txxs tc2" id="lineLog">Prêt.</div>
+  </div>
+  <div class="card"><div class="ct" style="margin-bottom:12px;"><i class="fa-solid fa-palette"></i> Carte des couleurs</div>
+    <div class="color-map" id="colorMap">
+      <div class="color-item" onclick="navigateToRoom('Salon')"><div class="ci-emoji">🔴</div><div class="ci-color">Rouge</div><div class="ci-room">Salon</div></div>
+      <div class="color-item" onclick="navigateToRoom('Cuisine')"><div class="ci-emoji">🔵</div><div class="ci-color">Bleu</div><div class="ci-room">Cuisine</div></div>
+      <div class="color-item" onclick="navigateToRoom('Chambre')"><div class="ci-emoji">🟢</div><div class="ci-color">Vert</div><div class="ci-room">Chambre</div></div>
+      <div class="color-item" onclick="navigateToRoom('Salle de bain')"><div class="ci-emoji">🟡</div><div class="ci-color">Jaune</div><div class="ci-room">Salle de bain</div></div>
+      <div class="color-item" onclick="navigateToRoom('Bureau')"><div class="ci-emoji">🟠</div><div class="ci-color">Orange</div><div class="ci-room">Bureau</div></div>
+      <div class="color-item" onclick="navigateToRoom('Couloir')"><div class="ci-emoji">🟣</div><div class="ci-color">Violet</div><div class="ci-room">Couloir</div></div>
+    </div>
+    <div class="mt8" id="lineHistory" style="max-height:160px;overflow-y:auto;font-size:11px;color:var(--txt2);"></div>
+  </div>
+</div>
+
+<!-- EXERCICES IA -->
+<div class="tc" id="tc-exercices">
+  <div class="card">
+    <div class="ch"><span class="ct"><i class="fa-solid fa-graduation-cap"></i> Aide aux exercices</span><span class="bge bg-a" style="font-size:9px;">IA Vision</span></div>
+    <div style="font-size:12px;color:var(--txt2);margin-bottom:12px;">Montrez votre exercice devant la caméra, l'IA l'analyse et vous aide à le résoudre.</div>
+    <div class="exo-box">
+      <img id="exoImgPrev" class="exo-img-prev" src="" alt="Aperçu">
+      <div class="row" style="flex-wrap:wrap;gap:7px;margin-bottom:10px;">
+        <button class="btn bp f1" onclick="exoFromCam()"><i class="fa-solid fa-camera"></i> Capturer depuis caméra</button>
+        <label class="btn bs" style="cursor:pointer;"><i class="fa-solid fa-upload"></i> Charger photo<input type="file" accept="image/*" style="display:none;" onchange="exoFromFile(this)"></label>
+      </div>
+      <div class="fg">
+        <label class="fl">Instruction supplémentaire (optionnel)</label>
+        <input class="fi" id="exoInstruction" placeholder="Ex: Résous étape par étape, Explique le raisonnement...">
+      </div>
+      <button class="btn bp bbl" id="exoBtn" onclick="solveExercice()"><i class="fa-solid fa-brain"></i> Résoudre avec l'IA</button>
+    </div>
+    <div id="exoResult" class="exo-result" style="display:none;"></div>
+  </div>
+  <div class="card">
+    <div class="ct" style="margin-bottom:10px;"><i class="fa-solid fa-history"></i> Dernières analyses</div>
+    <div id="exoHistory" style="font-size:12px;color:var(--txt2);">Aucune analyse</div>
+  </div>
+</div>
+
+<!-- RAPPELS PERSONNES ÂGÉES -->
+<div class="tc" id="tc-rappels">
+  <div class="card">
+    <div class="ch"><span class="ct"><i class="fa-solid fa-clock"></i> Rappels — Personnes âgées</span><span id="remBadge" class="bge bg-d">0 actif(s)</span></div>
+    <div style="font-size:12px;color:var(--txt2);margin-bottom:12px;">Ajoutez des rappels vocaux : médicaments, repas, activités. Le robot les annoncera à l'heure.</div>
+    <div class="exo-box">
+      <div class="fg"><label class="fl">Nom de la personne</label><input class="fi" id="remPerson" placeholder="Mamie, Papa..."></div>
+      <div class="fg"><label class="fl">Message du rappel</label><input class="fi" id="remMsg" placeholder="Prendre médicaments, Boire de l'eau, Déjeuner..."></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" class="fg">
+        <div><label class="fl">Heure</label><input class="fi" id="remTime" type="time"></div>
+        <div><label class="fl">Répétition</label>
+          <select class="fi" id="remRepeat">
+            <option value="once">Une fois</option>
+            <option value="daily">Chaque jour</option>
+            <option value="hourly">Chaque heure</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn bp bbl" onclick="addReminder()"><i class="fa-solid fa-plus"></i> Ajouter rappel</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ct"><i class="fa-solid fa-list"></i> Rappels programmés</span><button class="btn bd bsm" onclick="clearAllReminders()">Tout effacer</button></div>
+    <div id="reminderList"><div class="txxs tc2" style="padding:14px;">Aucun rappel</div></div>
+  </div>
+</div>
+
+<!-- DOMOTIQUE (Relais 4 canaux) -->
+<div class="tc" id="tc-domotique">
+  <div class="card">
+    <div class="ch"><span class="ct"><i class="fa-solid fa-plug-circle-bolt"></i> Contrôle Domotique</span><span id="domBadge" class="bge bg-p">4 canaux</span></div>
+    <div style="font-size:12px;color:var(--txt2);margin-bottom:14px;">Pilotage du relais 4 canaux connecté au Pi5. Lumière, ventilateur, porte et canal de réserve.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="relay-card" id="relayCard-lumiere" style="background:rgba(0,0,0,.3);border:2px solid var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer;transition:.3s;">
+        <div style="font-size:32px;margin-bottom:8px;">💡</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;">Lumière</div>
+        <div style="font-size:11px;color:var(--txt2);margin-bottom:10px;">GPIO 20</div>
+        <div id="relaySt-lumiere" style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,68,68,.2);color:var(--danger);border:1px solid var(--danger);">OFF</div>
+      </div>
+      <div class="relay-card" id="relayCard-ventilateur" style="background:rgba(0,0,0,.3);border:2px solid var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer;transition:.3s;">
+        <div style="font-size:32px;margin-bottom:8px;">🌀</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;">Ventilateur</div>
+        <div style="font-size:11px;color:var(--txt2);margin-bottom:10px;">GPIO 18</div>
+        <div id="relaySt-ventilateur" style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,68,68,.2);color:var(--danger);border:1px solid var(--danger);">OFF</div>
+      </div>
+      <div class="relay-card" id="relayCard-porte" style="background:rgba(0,0,0,.3);border:2px solid var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer;transition:.3s;">
+        <div style="font-size:32px;margin-bottom:8px;">🚪</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;">Porte</div>
+        <div style="font-size:11px;color:var(--txt2);margin-bottom:10px;">GPIO 11</div>
+        <div id="relaySt-porte" style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,68,68,.2);color:var(--danger);border:1px solid var(--danger);">OFF</div>
+      </div>
+      <div class="relay-card" id="relayCard-reserve" style="background:rgba(0,0,0,.3);border:2px solid var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer;transition:.3s;">
+        <div style="font-size:32px;margin-bottom:8px;">⚡</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;">Réserve</div>
+        <div style="font-size:11px;color:var(--txt2);margin-bottom:10px;">GPIO 9</div>
+        <div id="relaySt-reserve" style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,68,68,.2);color:var(--danger);border:1px solid var(--danger);">OFF</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn bp" onclick="relayAll(true)"><i class="fa-solid fa-power-off"></i> Tout allumer</button>
+      <button class="btn bd" onclick="relayAll(false)"><i class="fa-solid fa-power-off"></i> Tout éteindre</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ct"><i class="fa-solid fa-diagram-project"></i> Guide de branchement</span></div>
+    <div style="font-size:12px;color:var(--txt2);line-height:1.8;">
+      <p><strong>Relais 4 canaux → Raspberry Pi 5</strong></p>
+      <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:12px;margin:10px 0;font-family:'JetBrains Mono',monospace;font-size:11px;">
+        <div>Canal 1 (Lumière)  → <span style="color:var(--primary);">GPIO 20</span></div>
+        <div>Canal 2 (Ventilo)  → <span style="color:var(--primary);">GPIO 18</span></div>
+        <div>Canal 3 (Porte)    → <span style="color:var(--primary);">GPIO 11</span></div>
+        <div>Canal 4 (Réserve)  → <span style="color:var(--primary);">GPIO 9</span></div>
+        <div style="margin-top:6px;color:var(--warning);">VCC → 5V (pin 2 ou 4)</div>
+        <div>GND → GND (pin 6)</div>
+      </div>
+      <p style="color:var(--warning);"><i class="fa-solid fa-triangle-exclamation"></i> Le relais est <strong>actif à l'état LOW</strong> (IN1=LOW = relais activé).</p>
+      <p>Chaque canal peut commuter jusqu'à 10A/250VAC ou 10A/30VDC.</p>
+      <p style="margin-top:8px;"><strong>Connexion appareils:</strong></p>
+      <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:12px;font-size:11px;">
+        <div>💡 Lumière: phase → COM / neutre → lampe → NO</div>
+        <div>🌀 Ventilateur: similaire, brancher sur NO</div>
+        <div>🚪 Porte: gâche électrique sur NO + COM</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ct"><i class="fa-solid fa-clock-rotate-left"></i> Historique</span></div>
+    <div id="relayHistory" style="max-height:200px;overflow-y:auto;font-size:11px;color:var(--txt2);">Aucune action</div>
+  </div>
+</div>
+
+<!-- IR -->
+<div class="tc" id="tc-ir"><div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-signal"></i> Télécommande IR</span><button class="btn bp bsm" onclick="addIRBtn()">+ Ajouter</button></div><div class="ir-grid" id="irGrid"><div class="txxs tc2" style="grid-column:1/-1;padding:20px;text-align:center;">Aucun bouton IR</div></div></div></div>
+
+<!-- BLUETOOTH -->
+<div class="tc" id="tc-bt">
+  <div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-volume-high"></i> Enceinte active</span><span id="btConnSt" class="bge bg-d">Non configurée</span></div><div id="btConnName" style="font-size:14px;font-weight:700;margin-bottom:12px;">Aucune enceinte</div><div class="fg"><div class="row"><input class="fi f1" id="btNameInput" placeholder="Nom de l'enceinte"><button class="btn bp" onclick="setBTName()">Valider</button></div></div><div class="divider"></div><div class="fg"><div class="row"><input class="fi f1" id="btTestTxt" placeholder="Message test"><button class="btn bp" onclick="speakBT(document.getElementById('btTestTxt').value)">Parler</button></div></div><div class="row mt8"><button class="btn bs f1" onclick="stopBT()">Stopper</button><button class="btn bd" onclick="clearBT()">Effacer</button></div></div>
+  <div class="card"><div class="ct" style="margin-bottom:12px;">Scanner Bluetooth</div><div class="row"><button class="btn bp" onclick="scanBluetooth()">Scanner</button><button class="btn bs" onclick="connectBluetooth()">Connecter sélectionné</button></div><div id="bluetoothDevicesList" style="margin-top:10px;"></div></div>
+  <div class="card"><div class="ct" style="margin-bottom:12px;">Paramètres voix</div><div class="fg"><div class="sl-lbl"><span>Volume</span><span id="ttsVolVal">90%</span></div><input type="range" min="0" max="100" value="90" id="ttsVol" oninput="document.getElementById('ttsVolVal').textContent=this.value+'%';S.ttsVol=this.value/100;"></div><div class="fg"><div class="sl-lbl"><span>Vitesse</span><span id="ttsRateVal">Normal</span></div><input type="range" min="5" max="20" value="10" id="ttsRate" oninput="updateTTSRate(this.value)"></div><button class="btn bp bbl" onclick="speakBT('Test de voix SentriX')">Tester</button></div>
+</div>
+
+<!-- ALERTES -->
+<div class="tc" id="tc-alerts"><div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-bell"></i> Alertes</span><button class="btn bs bsm" onclick="clearAlerts()">Effacer</button></div><div class="al" id="alertList"><div class="txs tc2" style="padding:18px;">Aucune alerte</div></div></div></div>
+
+<!-- WIFI -->
+<div class="tc" id="tc-wifi"><div class="card"><div class="ch"><span class="ct"><i class="fa-solid fa-wifi"></i> WiFi Pi5</span><button class="btn bs bsm" onclick="scanWifi()">Scanner</button></div><div id="wifiList" class="wl"><div class="txxs tc2">Cliquez Scanner pour chercher les réseaux</div></div></div><div class="card"><div class="ct" style="margin-bottom:12px;">Connexion manuelle</div><div class="fg"><input class="fi" id="manSSID" placeholder="SSID"></div><div class="fg"><input class="fi" id="manPwd" type="password" placeholder="Mot de passe"></div><button class="btn bp bbl" onclick="manWifi()">Connecter</button></div></div>
+
+<!-- CONFIG -->
+<div class="tc" id="tc-settings">
+  <div class="card"><div class="stit">📡 Raspberry Pi 5</div><div class="fg"><label class="fl">IP du Pi5</label><input class="fi" id="stIP" placeholder="192.168.1.42"></div><div class="fg"><label class="fl">Port WebSocket</label><input class="fi" id="stPort" type="number" value="8765"></div><button class="btn bp bbl" onclick="saveRobotSt()">Sauvegarder</button></div>
+  <div class="card"><div class="stit">🧠 Clés API Gemini (texte)</div><div class="fg"><label class="fl">Clé #1 (principale)</label><div class="akg"><input class="fi" id="ak1" type="password" placeholder="Collez clé #1"><button class="akt" onclick="tvPwd('ak1',this)"><i class="fa-solid fa-eye"></i></button></div></div>
+    <div class="fg"><label class="fl">Clé #2</label><div class="akg"><input class="fi" id="ak2" type="password" placeholder="Collez clé #2"><button class="akt" onclick="tvPwd('ak2',this)"><i class="fa-solid fa-eye"></i></button></div></div>
+    <div class="fg"><label class="fl">Clé #3</label><div class="akg"><input class="fi" id="ak3" type="password" placeholder="Collez clé #3"><button class="akt" onclick="tvPwd('ak3',this)"><i class="fa-solid fa-eye"></i></button></div></div>
+    <button class="btn bp bbl" onclick="saveAPIKeys()">Sauvegarder</button></div>
+  <div class="card"><div class="stit">✈️ Telegram</div><div id="tgStatus" class="txxs tc2" style="margin-bottom:10px;">Non configuré</div><div class="fg"><label class="fl">Token Bot</label><input class="fi" id="tgToken" type="password"></div><div class="fg"><label class="fl">Chat ID</label><input class="fi" id="tgChatId"></div><div class="row"><button class="btn bp" onclick="saveTelegram()">Sauvegarder</button><button class="btn bs" onclick="testTelegram()">Tester</button></div></div>
+  <div class="card"><div class="stit">💚 WhatsApp (GREEN-API)</div><div class="fg"><label class="fl">ID Instance</label><input class="fi" id="waId"></div><div class="fg"><label class="fl">Token</label><input class="fi" id="waToken" type="password"></div><div class="fg"><label class="fl">Destinataire (sans +)</label><input class="fi" id="waRecipient"></div><div class="row"><button class="btn bp" onclick="saveWhatsApp()">Sauvegarder</button><button class="btn bs" onclick="testWhatsApp()">Tester</button></div></div>
+  <div class="card"><div class="stit">🔔 Alertes automatiques</div>
+    <div class="row" style="justify-content:space-between;margin-bottom:8px;"><span>🔥 Incendie</span><button class="ab" id="stFire" onclick="togSt('stFire','alertFire')">OFF</button></div>
+    <div class="row" style="justify-content:space-between;margin-bottom:8px;"><span>🚨 Mouvement + Photo</span><button class="ab" id="stMotion" onclick="togSt('stMotion','alertMotion')">OFF</button></div>
+    <div class="row" style="justify-content:space-between;margin-bottom:8px;"><span>☠️ Gaz</span><button class="ab" id="stGas" onclick="togSt('stGas','alertGas')">OFF</button></div>
+    <div class="row" style="justify-content:space-between;margin-bottom:8px;"><span>🔍 Intrus inconnu</span><button class="ab" id="stIntruder" onclick="togSt('stIntruder','alertIntruder')">OFF</button></div>
+    <div class="row" style="justify-content:space-between;"><span>😢 Consolation visage triste</span><button class="ab" id="stEmotion" onclick="togSt('stEmotion','alertEmotion')">OFF</button></div>
+  </div>
+  <div class="card"><div class="stit">🗣️ Synthèse vocale</div><div class="row" style="justify-content:space-between;"><span>Activer la voix (TTS)</span><button class="ab" id="ttsToggle" onclick="toggleTTS()">ON</button></div></div>
+  <div class="card"><div class="stit">🧠 Mode absent / nuit</div><div class="row" style="justify-content:space-between;"><span>Mode absent (armé)</span><button class="ab" id="absentMode" onclick="toggleAbsentMode()">OFF</button></div></div>
+  <div class="card"><div class="stit">ℹ️ Système</div><div style="font-size:12px;color:var(--txt2);margin-bottom:14px;">SentriX – IA Fusion + Cerveau Autonome (Gemini + Mistral)</div><button class="btn bd bbl" onclick="resetApp()">Réinitialiser</button></div>
+</div>
+
+</div><!-- /main -->
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+// ============================================================
+//  SENTRIX – Interface Web (Gemini + fallback Mistral)
+// ============================================================
+
+// ─── CLÉS API GEMINI (texte) ──────────────────────────────
+let GEMINI_KEYS = [];
+function loadGeminiKeys() {
+  GEMINI_KEYS = [
+    localStorage.getItem('sentrix_ak1') || '',
+    localStorage.getItem('sentrix_ak2') || '',
+    localStorage.getItem('sentrix_ak3') || ''
+  ].filter(k => k.length > 0);
+  // Charger aussi dans les champs
+  const ak1 = localStorage.getItem('sentrix_ak1') || '';
+  const ak2 = localStorage.getItem('sentrix_ak2') || '';
+  const ak3 = localStorage.getItem('sentrix_ak3') || '';
+  const e1 = document.getElementById('ak1'); if(e1) e1.value = ak1;
+  const e2 = document.getElementById('ak2'); if(e2) e2.value = ak2;
+  const e3 = document.getElementById('ak3'); if(e3) e3.value = ak3;
+  // Charger clé Live
+  const liveKey = localStorage.getItem('sentrix_liveAk') || '';
+  const el = document.getElementById('liveApiKey'); if(el) el.value = liveKey;
+  updateAkLbl();
+}
+const GEMINI_MODEL_TEXT = 'gemini-3.1-flash-lite-preview';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL_TEXT}:generateContent`;
+
+// ─── MISTRAL VIA OPENROUTER (fallback) ────────────────────
+let OPENROUTER_KEY = '';
+function loadOpenRouterKey() {
+  OPENROUTER_KEY = localStorage.getItem('sentrix_orKey') || '';
+}
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const MISTRAL_MODEL  = 'mistralai/ministral-14b-2512';
+
+// ─── LIVE AUDIO GEMINI ────────────────────────────────────
+const GEMINI_LIVE_MODEL = 'models/gemini-3.1-flash-live-preview';
+let _geminiExhausted = false;
+
+// Mapping pièces → couleurs
+const ROOM_COLORS = {
+  "Salon":        {color:"rouge",  emoji:"🔴"},
+  "Cuisine":      {color:"bleu",   emoji:"🔵"},
+  "Chambre":      {color:"vert",   emoji:"🟢"},
+  "Salle de bain":{color:"jaune",  emoji:"🟡"},
+  "Bureau":       {color:"orange", emoji:"🟠"},
+  "Couloir":      {color:"violet", emoji:"🟣"},
+};
+
+// ─── MÉMOIRE ──────────────────────────────────────────────
+const MemoryDB = {
+  conversations: [],
+  faces: [],
+  preferences: { ttsEnabled: true, absentMode: false, lastManualCmd: 0 },
+  maxConv: 100,
+  init() {
+    try {
+      const s = localStorage.getItem('sx_memory');
+      if (s) { const d=JSON.parse(s); this.conversations=d.conversations||[]; this.faces=d.faces||[]; this.preferences={...this.preferences,...d.preferences}; }
+    } catch(e) {}
+    this.updateTTSButton();
+    this.updateAbsentButton();
+  },
+  save() {
+    try { localStorage.setItem('sx_memory', JSON.stringify({conversations:this.conversations.slice(-this.maxConv),faces:this.faces,preferences:this.preferences})); } catch(e){}
+  },
+  syncToPi() {
+    if (!S.connected) return;
+    wsSend({type:'save_conversations',data:this.conversations});
+    wsSend({type:'save_faces',data:this.faces});
+  },
+  addConv(role, content) {
+    this.conversations.push({role,content,timestamp:Date.now()});
+    if(this.conversations.length>this.maxConv) this.conversations.shift();
+    this.save(); this.syncToPi();
+  },
+  getRecent(n=10) { return this.conversations.slice(-n); },
+  addFace(name, img64) {
+    const idx = this.faces.findIndex(f=>f.name===name);
+    const face = {name,descriptor:btoa(name+Date.now()).substring(0,20),imageData:img64,timestamp:Date.now()};
+    if(idx>=0) this.faces[idx]=face; else this.faces.push(face);
+    this.save(); this.syncToPi(); updateFaceList();
+  },
+  getFaceNames() { return this.faces.map(f=>f.name); },
+  updateTTSButton() {
+    const btn = document.getElementById('ttsToggle');
+    if(btn) { btn.textContent = this.preferences.ttsEnabled ? 'ON' : 'OFF'; btn.classList.toggle('act', this.preferences.ttsEnabled); }
+  },
+  updateAbsentButton() {
+    const btn = document.getElementById('absentMode');
+    if(btn) { btn.textContent = this.preferences.absentMode ? 'ON' : 'OFF'; btn.classList.toggle('act', this.preferences.absentMode); }
+  }
+};
+
+// ─── ÉTAT GLOBAL ─────────────────────────────────────────
+const S = {
+  ws:null, connected:false, robotIP:'', robotPort:8765,
+  speed:150, currentKey:0,
+  chatHistory:[], irCodes:[], irLearning:false,
+  sensors:{dist:0,gas:0,bat:100,tmp:0,motion:false,fire:false},
+  distHist:[], alerts:[], photos:[],
+  camActive:false, camFpsTimer:null, lastCamB64:null, camFrameCount:0, camFpsLast:0,
+  isListening:false, recognition:null, cmdInterval:null,
+  settings:{alertFire:false,alertMotion:false,alertGas:false,alertIntruder:false,alertEmotion:false},
+  ttsVol:0.9, ttsRate:1.0, ttsPitch:1.0, btName:'',
+  lineActive:false, currentRoom:'Inconnue',
+  liveWs:null, liveConnected:false, liveMicActive:false, liveMicStream:null,
+  liveMicCtx:null, liveMicProc:null, liveAnalyser:null, liveAnimId:null,
+  liveNextPlayTime:0, liveOutCtx:null, liveAiSpeaking:false, liveAiBarRaf:null,
+  waId:'', waToken:'', waRecipient:'',
+  tgToken:'', tgChatId:'',
+  searchActive:false, searchInterval:null,
+  _selectedBtAddress:null,
+  relays: {lumiere:false, ventilateur:false, porte:false, reserve:false},
+  lastManualCmdTime: 0,
+  lastBrainDecision: 0
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  NAVIGATION & UTILITAIRES
+// ═══════════════════════════════════════════════════════════════════
+function showTab(name) {
+  document.querySelectorAll('.tc').forEach(e=>e.classList.remove('act'));
+  document.querySelectorAll('.ntab').forEach(e=>e.classList.remove('act'));
+  const tc = document.getElementById('tc-'+name);
+  if(tc) tc.classList.add('act');
+  const btn = Array.from(document.querySelectorAll('.ntab')).find(b=>b.getAttribute('data-tab')===name);
+  if(btn) btn.classList.add('act');
+}
+document.querySelectorAll('.ntab').forEach(btn=>btn.addEventListener('click',()=>showTab(btn.getAttribute('data-tab'))));
+document.getElementById('alertBtn').addEventListener('click',()=>showTab('alerts'));
+document.getElementById('settingsBtn').addEventListener('click',()=>showTab('settings'));
+
+function toggleTTS() {
+  MemoryDB.preferences.ttsEnabled = !MemoryDB.preferences.ttsEnabled;
+  MemoryDB.save();
+  MemoryDB.updateTTSButton();
+  toast(`Synthèse vocale ${MemoryDB.preferences.ttsEnabled ? 'activée' : 'désactivée'}`, 'info');
+}
+function toggleAbsentMode() {
+  MemoryDB.preferences.absentMode = !MemoryDB.preferences.absentMode;
+  MemoryDB.save();
+  MemoryDB.updateAbsentButton();
+  toast(`Mode absent ${MemoryDB.preferences.absentMode ? 'ARMÉ' : 'désactivé'}`, MemoryDB.preferences.absentMode ? 'warning' : 'info');
+  if(MemoryDB.preferences.absentMode && S.connected) sendCmd('patrol');
+}
+
+function speakBT(txt) {
+  if(!txt || !MemoryDB.preferences.ttsEnabled) return;
+  const clean = txt.replace(/<[^>]*>/g,'').replace(/[*_#`]/g,'').substring(0,300).trim();
+  if(!clean) return;
+  if('speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(clean);
+      u.lang = 'fr-FR';
+      u.rate = S.ttsRate || 1;
+      u.pitch = S.ttsPitch || 1;
+      u.volume = S.ttsVol || 0.9;
+      const v = window.speechSynthesis.getVoices().find(v=>v.lang.startsWith('fr'));
+      if(v) u.voice = v;
+      window.speechSynthesis.speak(u);
+    } catch(e){}
+  }
+}
+function toast(msg,type='info',dur=3000){
+  const c=document.getElementById('tc'); const el=document.createElement('div'); el.className='tst '+type;
+  const ic={success:'fa-check-circle',error:'fa-times-circle',warning:'fa-exclamation-triangle',info:'fa-info-circle',fire:'fa-fire'};
+  el.innerHTML=`<i class="fa-solid ${ic[type]||ic.info}"></i> ${msg}`;
+  c.appendChild(el); setTimeout(()=>{el.classList.add('tst-fd');setTimeout(()=>el.remove(),350);},dur);
+}
+function closeMo(id){ document.getElementById(id).classList.remove('open'); }
+function tvPwd(id,btn){ const inp=document.getElementById(id); const on=inp.type==='password'; inp.type=on?'text':'password'; btn.innerHTML=on?'<i class="fa-solid fa-eye-slash"></i>':'<i class="fa-solid fa-eye"></i>'; }
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ═══════════════════════════════════════════════════════════════════
+//  WEBSOCKET
+// ═══════════════════════════════════════════════════════════════════
+function connectRobot() {
+  const ip = document.getElementById('rIP').value.trim();
+  const port = parseInt(document.getElementById('rPort').value)||8765;
+  if(!ip){toast('Entrez l\'IP du Pi5','warning');return;}
+  S.robotIP=ip; S.robotPort=port;
+  openWS(ip, port);
+}
+function openWS(ip, port) {
+  if(S.ws){try{S.ws.close();}catch(e){}S.ws=null;}
+  clearTimeout(S._wsReconn);
+  wsLog(`Connexion à ws://${ip}:${port}...`);
+  try {
+    S.ws = new WebSocket(`ws://${ip}:${port}`);
+    S.ws.onopen = () => {
+      S.connected=true; setConn(true, ip); wsLog('✅ Pi5 connecté!');
+      toast('🤖 Pi5 connecté!','success');
+      saveData();
+      wsSend({type:'get_sensors'});
+      wsSend({type:'load_conversations'});
+      wsSend({type:'load_faces'});
+      // Synchroniser config Telegram/WA et alertes vers le Pi
+      if(S.tgToken && S.tgChatId) wsSend({type:'set_telegram',token:S.tgToken,chat_id:S.tgChatId});
+      if(S.waId && S.waToken && S.waRecipient) wsSend({type:'set_whatsapp',id:S.waId,token:S.waToken,recipient:S.waRecipient});
+      wsSend({type:'set_alert_settings',alertMotion:S.settings.alertMotion,alertIntruder:S.settings.alertIntruder,alertEmotion:S.settings.alertEmotion});
+      // Sync rappels
+      if(REMINDERS && REMINDERS.length) wsSend({type:'save_reminders',reminders:REMINDERS});
+      // Sync relais
+      wsSend({type:'get_relays'});
+      // Sync clé Gemini principale
+      const k = document.getElementById('ak1'); if(k && k.value) wsSend({type:'set_gemini_key',key:k.value});
+      clearInterval(S._pingTimer);
+      S._pingTimer = setInterval(()=>{if(S.connected)wsSend({type:'ping'});},10000);
+      // Auto-connecter la caméra dès que le Pi est connecté
+      setTimeout(()=>{ if(S.connected) connCam(); }, 500);
+    };
+    S.ws.onclose = e => {
+      S.connected=false; setConn(false,'');
+      if(S.camActive) discCam();
+      wsLog(`⚠️ Déconnecté (${e.code}) – reconnexion dans 3s...`);
+      S._wsReconn=setTimeout(()=>{if(S.robotIP)openWS(S.robotIP,S.robotPort);},3000);
+    };
+    S.ws.onerror = ()=>wsLog('❌ Erreur WebSocket');
+    S.ws.onmessage = e=>onWSMsg(e.data);
+  } catch(err) {
+    wsLog('Erreur: '+err.message); toast('Connexion impossible','error');
+  }
+}
+function setConn(ok, ip) {
+  document.getElementById('cDot').classList.toggle('on',ok);
+  document.getElementById('cTxt').textContent = ok?ip:'Déconnecté';
+  document.getElementById('wsSt').className = ok?'bge bg-s':'bge bg-d';
+  document.getElementById('wsSt').textContent = ok?'Connecté ✓':'Déconnecté';
+}
+function wsLog(t){ const el=document.getElementById('wsLog'); if(el)el.textContent=t; }
+function wsSend(data){ if(S.ws&&S.ws.readyState===WebSocket.OPEN){S.ws.send(JSON.stringify(data));return true;}return false; }
+
+function onWSMsg(raw) {
+  try {
+    const d = JSON.parse(raw);
+    if(d.type==='sensors')           updateSensors(d);
+    else if(d.type==='alert')        addAlert(d.level||'warning',d.title||'Alerte',d.message||'',d.photo);
+    else if(d.type==='cam_frame')    handleCamFrame(d.data);
+    else if(d.type==='photo')        addPhoto(d.image, d.source||'pi5');
+    else if(d.type==='cmd_ack')      document.getElementById('curCmd').textContent=(d.cmd||'STOP').toUpperCase();
+    else if(d.type==='room_change')  updateRoom(d.room, d.color, d.emoji);
+    else if(d.type==='destination_reached'){ toast(`🏁 Arrivé: ${d.room}`,'success',5000); updateRoom(d.room, null, null); }
+    else if(d.type==='pong')         wsLog('✅ Pi5 actif');
+    else if(d.type==='info')         toast(d.message||'','info');
+    else if(d.type==='warning')      toast(d.message||'','warning');
+    else if(d.type==='error')        toast(d.message||'','error');
+    else if(d.type==='ir_code')      onIRCode(d.code, d.protocol);
+    else if(d.type==='wifi_scan_result')      renderWifiList(d.networks);
+    else if(d.type==='wifi_connect_result')   { toast(d.success?`✅ Connecté à ${d.ssid}`:`❌ Échec ${d.ssid}`, d.success?'success':'error'); }
+    else if(d.type==='bluetooth_scan_result') renderBluetoothDevices(d.devices);
+    else if(d.type==='bluetooth_connect_result'){ toast(d.success?'✅ BT connecté':'❌ Échec BT', d.success?'success':'error'); }
+    else if(d.type==='conversations_data')    { MemoryDB.conversations=d.data; MemoryDB.save(); }
+    else if(d.type==='faces_data')            { MemoryDB.faces=d.data; MemoryDB.save(); updateFaceList(); }
+    else if(d.type==='preferences_data')      { if(d.data){MemoryDB.preferences={...MemoryDB.preferences,...d.data};MemoryDB.save();MemoryDB.updateTTSButton();MemoryDB.updateAbsentButton();} }
+    else if(d.type==='reminders_update')      { renderReminders(); }
+    else if(d.type==='relay_state')    updateRelayUI(d.channel, d.state);
+    else if(d.type==='relay_all_states') updateAllRelayUI(d.relays);
+    else if(d.type==='save_ack')              console.log('Pi save OK:', d.target);
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  COMMANDES MOTEUR
+// ═══════════════════════════════════════════════════════════════════
+// === FONCTION sendCmd CORRIGÉE ===
+function sendCmd(cmd, speed = S.speed) {
+    if (!S.connected) {
+        toast('Pi5 non connecté', 'warning');
+        return;
+    }
+    if (cmd === 'patrol') {
+        startPatrol();
+        return;
+    }
+    wsSend({ type: 'move', cmd, speed });
+}
+
+function startCmd(cmd) {
+  ['f','b','l','r'].forEach(k=>{ const el=document.getElementById('db-'+k); if(el)el.classList.remove('pr'); });
+  const k={forward:'f',backward:'b',left:'l',right:'r'}[cmd];
+  if(k){ const el=document.getElementById('db-'+k); if(el)el.classList.add('pr'); }
+  sendCmd(cmd);
+  clearInterval(S.cmdInterval);
+  S.cmdInterval=setInterval(()=>sendCmd(cmd),200);
+  S.lastManualCmdTime = Date.now();
+}
+function stopCmd() {
+  ['f','b','l','r'].forEach(k=>{ const el=document.getElementById('db-'+k); if(el)el.classList.remove('pr'); });
+  clearInterval(S.cmdInterval);
+  sendCmd('stop');
+  S.lastManualCmdTime = Date.now();
+}
+function sendStop() { clearInterval(S.cmdInterval); sendCmd('stop'); S.lastManualCmdTime = Date.now(); }
+function emergStop() { clearInterval(S.cmdInterval); if(S.connected) wsSend({type:'emergency_stop'}); toast('⚠️ ARRÊT URGENCE!','warning'); addAlert('dng','🚨 ARRÊT URGENCE','Arrêt manuel'); S.lastManualCmdTime = Date.now(); }
+function updSpd(v) { S.speed=parseInt(v); document.getElementById('spdVal').textContent=v; if(S.connected)wsSend({type:'speed',value:S.speed}); }
+function sendServo(axis, v) {
+  document.getElementById(axis+'V').textContent=v+'°';
+  document.getElementById(axis+'Sl').value=v;
+  if(S.connected) wsSend({type:'servo',axis,angle:parseInt(v)});
+}
+function sendServoScan() { if(S.connected)wsSend({type:'servo_scan'}); toast('🔍 Scan servo...','info'); }
+function startPatrol() { if(!S.connected){toast('Pi5 non connecté','warning');return;} wsSend({type:'patrol'}); toast('🛡️ Patrouille démarrée','success'); }
+function takePhoto() {
+  if(!S.connected) { toast('Robot non connecté','warning'); return; }
+  toast('📷 Capture en cours...','info', 1500);
+  wsSend({type:'take_photo'});
+}
+function reqSens() { if(S.connected)wsSend({type:'get_sensors'}); }
+function togAct(btnId,cmd,label) {
+  const el=document.getElementById(btnId);
+  const on=el.classList.toggle('act');
+  if(S.connected)wsSend({type:'action',cmd,state:on?1:0});
+  toast(label+(on?' activé':' désactivé'),on?'success':'info',1500);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  CAPTEURS
+// ═══════════════════════════════════════════════════════════════════
+function updateSensors(d) {
+  const now = new Date().toLocaleTimeString('fr');
+  if(d.dist!==undefined){ S.sensors.dist=d.dist; setSens('dist',d.dist+' cm',Math.min(100,d.dist/4)); checkDist(d.dist); }
+  if(d.gas!==undefined) { S.sensors.gas=d.gas; setSens('gas',d.gas,Math.min(100,d.gas/10)); if(d.gas>=1023 && S.settings.alertGas){addAlert('fire','☠️ GAZ!','MQ-2 alerte!');} }
+  if(d.bat!==undefined) { S.sensors.bat=d.bat; setSens('bat',d.bat+'%',d.bat); checkBat(d.bat); }
+  if(d.tmp!==undefined) { S.sensors.tmp=d.tmp; setSens('tmp',d.tmp+'°C',Math.min(100,d.tmp/80*100)); if(d.tmp>75)addAlert('dng','🌡️ Surchauffe CPU',d.tmp+'°C'); }
+  if(d.motion!==undefined){ document.getElementById('sv-mot').textContent=d.motion?'DÉTECTÉ!':'Aucun'; if(d.motion&&S.settings.alertMotion)addAlert('dng','🚨 Mouvement!','Détecté!'); }
+  if(d.fire!==undefined){ document.getElementById('sv-fire').textContent=d.fire?'OUI!':'NON'; if(d.fire&&S.settings.alertFire)addAlert('fire','🔥 INCENDIE!','Flamme!'); }
+  if(d.current_room){ S.currentRoom=d.current_room; updateRoom(d.current_room, d.line_color||null, null); }
+  if(d.line_active!==undefined){ S.lineActive=d.line_active; const b=document.getElementById('lineBadge'); if(b){b.textContent=d.line_active?'Actif':'Arrêté';b.className=d.line_active?'bge bg-s':'bge bg-d';} }
+  if(d.relays){ S.relays=d.relays; updateAllRelayUI(d.relays); }
+  document.getElementById('sensUpd').textContent='Mis à jour: '+now;
+  S.distHist.push(d.dist||0); if(S.distHist.length>30)S.distHist.shift();
+  renderDistChart();
+  autonomousBrain(d);
+}
+function setSens(id,val,pct){ document.getElementById('sv-'+id).textContent=val; const bf=document.getElementById('sbf-'+id); if(bf)bf.style.width=pct+'%'; }
+function checkDist(v){ const sc=document.getElementById('sc-dist'); sc.className='sc'+(v<20?' dng':v<50?' warn':''); }
+function checkBat(v){ const sc=document.getElementById('sc-bat'); sc.className='sc'+(v<15?' dng':v<30?' warn':''); if(v<15)toast('🔋 Batterie critique!','error'); }
+function renderDistChart() {
+  const c=document.getElementById('distChart'); if(!c)return;
+  const mx=Math.max(...S.distHist,1);
+  c.innerHTML=S.distHist.map(v=>`<div style="flex:1;height:${Math.max(4,Math.round((v/mx)*80))}px;background:${v<20?'var(--danger)':v<50?'var(--warning)':'var(--primary)'};border-radius:2px 2px 0 0;opacity:.8;min-width:5px;" title="${v}cm"></div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  CERVEAU AUTONOME
+// ═══════════════════════════════════════════════════════════════════
+function autonomousBrain(sensors) {
+  if(Date.now() - S.lastManualCmdTime < 5000) return;
+  const dist = sensors.dist || 999;
+  const gas = sensors.gas || 1023;
+  const bat = sensors.bat || 100;
+  const tmp = sensors.tmp || 0;
+  const motion = sensors.motion || false;
+  const hour = new Date().getHours();
+  const isNight = (hour >= 22 || hour <= 6);
+  
+  if(dist < 15 && S.connected) {
+    if(S.lastBrainDecision !== 'obstacle') {
+      wsSend({type:'move',cmd:'stop',speed:0});
+      wsSend({type:'action',cmd:'buzz',state:1});
+      toast(`🚧 Obstacle à ${dist}cm – arrêt automatique`,'warning');
+      addAlert('warning','🚧 OBSTACLE',`Distance: ${dist}cm`);
+      S.lastBrainDecision = 'obstacle';
+    }
+    return;
+  }
+  if(gas >= 1023 && S.connected && S.lastBrainDecision !== 'gas') {
+    wsSend({type:'move',cmd:'stop',speed:0});
+    sendAlertWithPhoto('☠️ GAZ DANGEREUX', `Niveau: ${gas} ppm. Évacuez immédiatement!`, 'fire');
+    toast(`☠️ GAZ DANGEREUX! ${gas} ppm`,'fire',8000);
+    S.lastBrainDecision = 'gas';
+    return;
+  }
+  if(sensors.fire && S.connected && S.lastBrainDecision !== 'fire') {
+    wsSend({type:'move',cmd:'stop',speed:0});
+    sendAlertWithPhoto('🔥 INCENDIE DÉTECTÉ!', 'Flamme détectée! Intervention urgente!', 'fire');
+    toast('🔥 INCENDIE DÉTECTÉ!','fire',8000);
+    S.lastBrainDecision = 'fire';
+    return;
+  }
+  if(bat < 15 && S.connected && S.lastBrainDecision !== 'bat_low') {
+    wsSend({type:'move',cmd:'stop',speed:0});
+    addAlert('dng','🔋 BATTERIE CRITIQUE',`${bat}% restant`);
+    toast('🔋 Batterie critique – arrêt','error');
+    S.lastBrainDecision = 'bat_low';
+    return;
+  }
+  if(MemoryDB.preferences.absentMode && isNight && motion && S.connected && Date.now() - S.lastBrainDecision > 30000) {
+    wsSend({type:'patrol'});
+    takePhoto();
+    setTimeout(() => {
+      sendAlertWithPhoto('🚨 INTRUSION NUIT', `Mouvement detecte en mode absent (${new Date().toLocaleTimeString()})`, 'dng');
+    }, 1000);
+    S.lastBrainDecision = Date.now();
+    return;
+  }
+  if(S.lastManualCmdTime > 0 && (Date.now() - S.lastManualCmdTime) > 30*60*1000 && S.connected) {
+    const messages = ["Tout va bien ? Je suis là si besoin.", "Je surveille la maison. Besoin d'aide ?", "N'oubliez pas de boire de l'eau."];
+    const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+    appendMsg('b', randomMsg);
+    speakBT(randomMsg);
+    S.lastManualCmdTime = Date.now();
+    S.lastBrainDecision = Date.now();
+  }
+  if(dist >= 20 && gas < 1023 && bat >= 20 && !sensors.fire && !motion) {
+    S.lastBrainDecision = 0;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  ALERTES
+// ═══════════════════════════════════════════════════════════════════
+function addAlert(type, title, msg, photo) {
+  const now = new Date().toLocaleTimeString('fr');
+  S.alerts.unshift({type,title,msg,photo,time:now});
+  if(S.alerts.length>60)S.alerts.pop();
+  renderAlerts();
+  const nb=document.getElementById('alertNb');
+  if(nb){nb.style.display='flex';nb.textContent=Math.min(S.alerts.length,99);}
+  playAlertSound(type);
+  try{navigator.vibrate&&navigator.vibrate(type==='fire'?[500,100,500]:[300]);}catch(e){}
+  if('Notification'in window&&Notification.permission==='granted') new Notification(title,{body:msg});
+  saveData();
+}
+function renderAlerts() {
+  const list=document.getElementById('alertList');
+  if(!S.alerts.length){list.innerHTML='<div class="txs tc2" style="padding:18px;">Aucune alerte</div>';return;}
+  const icons={fire:'fa-fire',dng:'fa-triangle-exclamation',warning:'fa-bell',inf:'fa-info-circle'};
+  list.innerHTML=S.alerts.map(a=>`<div class="ai ${a.type}"><div class="ai-ic"><i class="fa-solid ${icons[a.type]||icons.warning}"></i></div><div class="ai-c"><div class="ai-t">${a.title}</div><div class="ai-tm">${a.time}</div>${a.msg?`<div class="ai-m">${escHtml(a.msg)}</div>`:''}</div>${a.photo?`<img class="ai-photo" src="${a.photo}" onclick="openPhoto('${a.photo}')">`:''}</div>`).join('');
+}
+function clearAlerts(){ S.alerts=[]; renderAlerts(); const nb=document.getElementById('alertNb'); if(nb)nb.style.display='none'; }
+function playAlertSound(type) {
+  try {
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const osc=ctx.createOscillator(); const gain=ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    if(type==='fire'){osc.frequency.setValueAtTime(880,ctx.currentTime);osc.frequency.setValueAtTime(1320,ctx.currentTime+.15);gain.gain.setValueAtTime(.4,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.7);osc.start();osc.stop(ctx.currentTime+.7);}
+    else{osc.frequency.value=523;gain.gain.setValueAtTime(.2,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.2);osc.start();osc.stop(ctx.currentTime+.2);}
+  } catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  CAMÉRA (WebSocket base64)
+// ═══════════════════════════════════════════════════════════════════
+function connCam() {
+  if(!S.connected){toast('Connectez le Pi5 d\'abord','warning');return;}
+  wsSend({type:'cam_stream',state:true});
+  const img = document.getElementById('camImg');
+  img.style.display = 'block';
+  document.getElementById('camPh').style.display = 'none';
+  document.getElementById('camOv').style.display = 'flex';
+  document.getElementById('camSt').className = 'bge bg-s';
+  document.getElementById('camSt').textContent = 'LIVE';
+  S.camActive = true;
+  S.camFrameCount = 0;
+  S.camFpsLast = Date.now();
+  if(S.camFpsTimer) clearInterval(S.camFpsTimer);
+  S.camFpsTimer = setInterval(()=>{
+    const elapsed = (Date.now() - S.camFpsLast) / 1000;
+    const fps = elapsed > 0 ? Math.round(S.camFrameCount / elapsed) : 0;
+    document.getElementById('camFps').textContent = fps + ' fps';
+    S.camFrameCount = 0;
+    S.camFpsLast = Date.now();
+  }, 2000);
+}
+
+function discCam() {
+  wsSend({type:'cam_stream',state:false});
+  const img = document.getElementById('camImg');
+  img.src = '';
+  img.style.display = 'none';
+  document.getElementById('camPh').style.display = 'flex';
+  document.getElementById('camOv').style.display = 'none';
+  document.getElementById('camSt').className = 'bge bg-d';
+  document.getElementById('camSt').textContent = 'Hors ligne';
+  S.camActive = false;
+  S.lastCamB64 = null;
+  if(S.camFpsTimer){ clearInterval(S.camFpsTimer); S.camFpsTimer = null; }
+}
+
+function handleCamFrame(b64) {
+  if(!S.camActive) return;
+  S.lastCamB64 = b64;
+  const img = document.getElementById('camImg');
+  img.src = 'data:image/jpeg;base64,' + b64;
+  S.camFrameCount++;
+}
+
+async function grabCamB64() {
+  // Use the last frame received from WebSocket
+  if(S.lastCamB64) return S.lastCamB64;
+  // Fallback: ask Pi for a photo via WebSocket
+  if(!S.connected) return null;
+  return new Promise((resolve) => {
+    const handler = (raw) => {
+      try {
+        const d = JSON.parse(raw);
+        if(d.type === 'photo' && d.image) {
+          S.ws.removeEventListener('message', handler);
+          resolve(d.image);
+        }
+      } catch(e) {}
+    };
+    // Timeout after 5 seconds
+    setTimeout(() => { try{S.ws.removeEventListener('message',handler);}catch(e){} resolve(null); }, 5000);
+    S.ws.addEventListener('message', handler);
+    wsSend({type:'take_photo'});
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  IA TEXTE – GEMINI + FALLBACK MISTRAL
+// ═══════════════════════════════════════════════════════════════════
+function buildSystemPrompt() {
+  const recentConv = MemoryDB.getRecent(3);
+  const faces = MemoryDB.getFaceNames().join(', ') || 'aucun';
+  const roomList = Object.entries(ROOM_COLORS).map(([r,c])=>`${c.emoji}${r}(ligne ${c.color})`).join(', ');
+  const hour = new Date().getHours();
+  const timeContext = hour < 12 ? "matin" : hour < 18 ? "après-midi" : "soirée";
+  return `Je suis SentriX, le robot. Visages: ${faces}. Pièces: ${roomList}. Heure: ${timeContext}. État: distance ${S.sensors.dist}cm, gaz ${S.sensors.gas}, batterie ${S.sensors.bat}%, CPU ${S.sensors.tmp}°C, pièce ${S.currentRoom}. Mode absent ${MemoryDB.preferences.absentMode ? 'ARMÉ' : 'OFF'}. Relais: lumière=${S.relays?.lumiere?'ON':'OFF'}, ventilateur=${S.relays?.ventilateur?'ON':'OFF'}, porte=${S.relays?.porte?'ON':'OFF'}, réserve=${S.relays?.reserve?'ON':'OFF'}. Je réponds en français. Pour les commandes, j'ajoute TOUJOURS un JSON à la fin: {"robot_cmd":"forward","speed":200,"duration":3000} ou {"robot_cmd":"backward","speed":200,"duration":1000} ou {"robot_cmd":"left","speed":150,"duration":600} ou {"robot_cmd":"right","speed":150,"duration":600} ou {"robot_cmd":"stop"} ou {"robot_cmd":"patrol"} ou {"robot_cmd":"take_photo"} ou {"robot_cmd":"servo_scan"} ou {"robot_cmd":"line_start"} ou {"robot_cmd":"line_stop"} ou {"robot_cmd":"go_to_room","room":"NomPièce"} ou {"robot_cmd":"search","target":"objet"} ou {"robot_cmd":"play_music","query":"titre artiste"} ou {"robot_cmd":"led","state":1} ou {"robot_cmd":"buzz"} ou {"robot_cmd":"relay","channel":"lumiere","state":true} ou {"robot_cmd":"relay","channel":"ventilateur","state":false} ou {"robot_cmd":"relay","channel":"porte","state":true} ou {"robot_cmd":"relay","channel":"reserve","state":true}. Les parametres speed (0-255) et duration (en ms) permettent un contrôle précis. Speed par defaut=150, duration par defaut: forward/backward=1000ms, left/right=600ms. Pour toute demande de musique je retourne {"robot_cmd":"play_music","query":"..."}. Pour créer un rappel je retourne {"robot_cmd":"set_reminder","person":"Nom","msg":"Prendre médicaments","time":"14:30","repeat":"once"}. Le parametre repeat peut etre: once (une fois), daily (chaque jour), hourly (chaque heure). Si l'utilisateur demande un rappel sans heure precise, je choisis une heure raisonnable. RÈGLE OBLIGATOIRE: je dois TOUJOURS inclure le JSON de commande quand une action est pertinente. Sans JSON le robot ne bougera pas.`;
+}
+
+async function callGemini(userMsg, imgB64=null) {
+  const hasImg = !!imgB64;
+  let userParts = hasImg ? [{inline_data:{mime_type:'image/jpeg',data:imgB64}},{text:userMsg}] : [{text:userMsg}];
+  const hist = S.chatHistory.slice(-4).map(m=>({role:m.r==='u'?'user':'model',parts:[{text:m.c}]}));
+  hist.push({role:'user',parts:userParts});
+  const body = {
+    system_instruction:{parts:[{text:buildSystemPrompt()}]},
+    contents: hist,
+    generationConfig:{maxOutputTokens:hasImg?400:300,temperature:0.7}
+  };
+  const bodyStr = JSON.stringify(body);
+  for(let attempt=0; attempt<GEMINI_KEYS.length; attempt++) {
+    const idx = (S.currentKey+attempt)%GEMINI_KEYS.length;
+    const key = GEMINI_KEYS[idx];
+    if(!key||key.length<10) continue;
+    try {
+      const r = await fetch(`${GEMINI_URL}?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:bodyStr});
+      if(r.status===429||r.status===503){ S.currentKey=(idx+1)%GEMINI_KEYS.length; updKeyLabel(); toast(`⚠️ Clé ${idx+1} quota→Clé ${S.currentKey+1}`,'warning',2000); continue; }
+      if(!r.ok) {
+        const errText = await r.text();
+        console.error(`Gemini error ${r.status}:`, errText);
+        throw new Error(`HTTP ${r.status}`);
+      }
+      const data=await r.json(); S.currentKey=idx; updKeyLabel();
+      return data?.candidates?.[0]?.content?.parts?.[0]?.text || '✅';
+    } catch(e) { if(attempt===GEMINI_KEYS.length-1) throw e; }
+  }
+  _geminiExhausted=true; throw new Error('GEMINI_QUOTA_EXHAUSTED');
+}
+async function callMistral(userMsg, imgB64=null) {
+  const hist = S.chatHistory.slice(-4).map(m=>({role:m.r==='u'?'user':'assistant',content:m.c}));
+  const userContent = imgB64 ? [{type:'text',text:userMsg},{type:'image_url',image_url:{url:`data:image/jpeg;base64,${imgB64}`}}] : userMsg;
+  const msgs = [{role:'system',content:buildSystemPrompt()}, ...hist, {role:'user',content:userContent}];
+  const r = await fetch(OPENROUTER_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+OPENROUTER_KEY},body:JSON.stringify({model:MISTRAL_MODEL,messages:msgs,max_tokens:500,temperature:0.7})});
+  if(!r.ok) throw new Error(`Mistral ${r.status}`);
+  const data=await r.json();
+  return data?.choices?.[0]?.message?.content || '✅';
+}
+async function callAI(userMsg, imgB64=null) {
+  try {
+    const text = await callGemini(userMsg, imgB64);
+    document.getElementById('aiFallback').style.display = 'none';
+    return { text, model: 'gemini' };
+  } catch(e) {
+    console.warn('Gemini failed, fallback to Mistral', e);
+    document.getElementById('aiFallback').style.display = 'inline';
+    return { text: await callMistral(userMsg, imgB64), model: 'mistral' };
+  }
+}
+function updKeyLabel(){ const n=S.currentKey+1; document.getElementById('akLbl').textContent=n+'/'+GEMINI_KEYS.length; }
+
+// ========== MUSIQUE SIMPLIFIÉE : envoi au Pi ==========
+function playMusicFromInput() {
+  const query = document.getElementById('musicSearchInp').value.trim();
+  if (!query) { toast('Entrez un artiste ou titre', 'warning'); return; }
+  if (!S.connected) { toast('Robot non connecté', 'error'); return; }
+  wsSend({ type: 'play_music', artist: query });
+  toast(`🎵 Recherche de "${query}" sur le Pi...`, 'info');
+}
+function stopMusic() {
+  toast("Arrêt non implémenté côté Pi (lecture en cours)", "info");
+}
+// ========== FIN MUSIQUE ==========
+
+// ═══════════════════════════════════════════════════════════════════
+//  NIVEAU 1 – parseNaturalCommand (version robuste)
+// ═══════════════════════════════════════════════════════════════════
+function parseNaturalCommand(text) {
+  const lower = text.toLowerCase();
+  if(lower.includes('avance')||lower.includes('avancer')){if(!S.connected){toast('Pi5 non connecté','warning');return false;}wsSend({type:'move',cmd:'forward',speed:S.speed,duration:1000});return true;}
+  if(lower.includes('recule')||lower.includes('reculer')){if(!S.connected){toast('Pi5 non connecté','warning');return false;}wsSend({type:'move',cmd:'backward',speed:S.speed,duration:1000});return true;}
+  if(lower.includes('gauche')||lower.includes('à gauche')){if(!S.connected){toast('Pi5 non connecté','warning');return false;}wsSend({type:'move',cmd:'left',speed:S.speed,duration:600});return true;}
+  if(lower.includes('droite')||lower.includes('à droite')){if(!S.connected){toast('Pi5 non connecté','warning');return false;}wsSend({type:'move',cmd:'right',speed:S.speed,duration:600});return true;}
+  if(lower.includes('stop')||lower.includes('arrête')||lower.includes('stopper')){if(!S.connected){toast('Pi5 non connecté','warning');return false;}wsSend({type:'move',cmd:'stop',speed:0});return true;}
+  if(lower.includes('patrouille')||lower.includes('surveille')){startPatrol();return true;}
+  const roomMap={'cuisine':'Cuisine','salon':'Salon','chambre':'Chambre','salle de bain':'Salle de bain','bureau':'Bureau','couloir':'Couloir'};
+  for(const [kw,room] of Object.entries(roomMap)){if(lower.includes(kw)){navigateToRoom(room);return true;}}
+  if(lower.includes('allume la lumière')||lower.includes('allume led')){if(!S.connected){toast('Pi5 non connecté','warning');return false;}wsSend({type:'action',cmd:'led',state:1});return true;}
+  if(lower.includes('éteins la lumière')||lower.includes('éteins led')){if(!S.connected){toast('Pi5 non connecté','warning');return false;}wsSend({type:'action',cmd:'led',state:0});return true;}
+  if(lower.includes('active mode absent')||lower.includes('arme la maison')){toggleAbsentMode();return true;}
+  if(lower.includes('désactive mode absent')){toggleAbsentMode();return true;}
+  if(lower.includes('photo')||lower.includes('prends une photo')){takePhoto();return true;}
+  const musicMatch = text.match(/^(?:joue|lance|mets|play|écoute[rz]?|cherche)\s+(.+)/i);
+  // Relais naturel
+  const relayMap = {lumiere:'lumiere',lumieres:'lumiere',light:'lumiere',ventilateur:'ventilateur',ventilo:'ventilateur',fan:'ventilateur',porte:'porte',door:'porte',reserve:'reserve'};
+  for(const [kw,ch] of Object.entries(relayMap)){
+    if(lower.includes(kw)){
+      const state = lower.includes('éteins')||lower.includes('off')||lower.includes('ferme') ? false : true;
+      if(S.connected) wsSend({type:'relay_ch',channel:ch,state});
+      return true;
+    }
+  }
+  if(lower.includes('allume tout')||lower.includes('allume tout')){
+    relayAll(true); return true;
+  }
+  if(lower.includes('éteins tout')||lower.includes('eteins tout')){
+    relayAll(false); return true;
+  }
+  if(musicMatch){ document.getElementById('musicSearchInp').value = musicMatch[1].trim(); playMusicFromInput(); return true; }
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  NIVEAU 2 – parseAndExecRobotCmd (corrigé avec musique)
+// ═══════════════════════════════════════════════════════════════════
+function parseAndExecRobotCmd(aiResp) {
+  const matches = aiResp.match(/\{[^{}]*"robot_cmd"[^{}]*\}/g);
+  if(!matches) return;
+  matches.forEach(m=>{
+    try {
+      const cmd = JSON.parse(m);
+      const rc = cmd.robot_cmd;
+      switch(rc) {
+        case 'forward': {
+          const sp = cmd.speed || S.speed;
+          const dur = cmd.duration || 1000;
+          if(S.connected){wsSend({type:'move',cmd:'forward',speed:sp,duration:dur});}
+          break;
+        }
+        case 'backward': {
+          const sp = cmd.speed || S.speed;
+          const dur = cmd.duration || 1000;
+          if(S.connected){wsSend({type:'move',cmd:'backward',speed:sp,duration:dur});}
+          break;
+        }
+        case 'left': {
+          const sp = cmd.speed || S.speed;
+          const dur = cmd.duration || 600;
+          if(S.connected){wsSend({type:'move',cmd:'left',speed:sp,duration:dur});}
+          break;
+        }
+        case 'right': {
+          const sp = cmd.speed || S.speed;
+          const dur = cmd.duration || 600;
+          if(S.connected){wsSend({type:'move',cmd:'right',speed:sp,duration:dur});}
+          break;
+        }
+        case 'stop':       if(S.connected)wsSend({type:'move',cmd:'stop',speed:0});break;
+        case 'patrol':     startPatrol();break;
+        case 'take_photo': takePhoto();break;
+        case 'servo_scan': sendServoScan();break;
+        case 'line_start': startLineFollower();break;
+        case 'line_stop':  stopLineFollower();break;
+        case 'get_sensors':reqSens();break;
+        case 'led':        if(S.connected)wsSend({type:'action',cmd:'led',state:cmd.state||0});break;
+        case 'buzz':       if(S.connected)wsSend({type:'action',cmd:'buzz',state:1});break;
+        case 'servo':      if(S.connected)wsSend({type:'servo',axis:cmd.axis||'pan',angle:cmd.angle||90});break;
+        case 'go_to_room':
+          if(cmd.room){ navigateToRoom(cmd.room); showTab('ligne'); }
+          break;
+        case 'search':
+          if(cmd.target){ document.getElementById('searchTarget').value=cmd.target; startIntelligentSearch(); }
+          break;
+        case 'play_music':
+        case 'search_music':
+          if(cmd.query){ document.getElementById('musicSearchInp').value=cmd.query; playMusicFromInput(); }
+          break;
+        case 'absent_mode':
+          if(cmd.state === 'on') { if(!MemoryDB.preferences.absentMode) toggleAbsentMode(); }
+          else if(cmd.state === 'off') { if(MemoryDB.preferences.absentMode) toggleAbsentMode(); }
+          break;
+        case 'relay':
+          if(cmd.channel && S.connected){
+            wsSend({type:'relay_ch',channel:cmd.channel,state:!!cmd.state});
+          }
+          break;
+        case 'set_reminder':
+          addReminderFromAI(cmd);
+          break;
+      }
+    } catch(e){}
+  });
+}
+
+function isVisionReq(msg){ return /voi[rs]|regarde|décri[st]|quoi|camera|image|photo|montre|devant|autour|what|show|look|vois/i.test(msg); }
+
+// ========== ANALYSE CONTINUE + TÂCHES ROBOT ==========
+const LIVE_ANALYSIS = { active: false, timer: null, count: 0, task: null };
+
+function toggleLiveAnalysis() {
+  if (LIVE_ANALYSIS.active) stopLiveAnalysis();
+  else startLiveAnalysis();
+}
+
+function startLiveAnalysis() {
+  if (LIVE_ANALYSIS.active) return;
+  LIVE_ANALYSIS.active = true;
+  LIVE_ANALYSIS.count = 0;
+  const btn = document.getElementById('btnLiveAnalysis');
+  const icon = document.getElementById('btnLiveIcon');
+  const txt = document.getElementById('btnLiveTxt');
+  const cnt = document.getElementById('liveFrameCount');
+  const log = document.getElementById('liveAnalysisLog');
+  btn.classList.add('active');
+  icon.className = 'fa-solid fa-circle-stop';
+  txt.textContent = 'Arrêter analyse';
+  cnt.style.display = 'block';
+  cnt.textContent = '0 analyses';
+  log.style.display = 'block';
+  log.innerHTML = '<span style="color:var(--success);">▶ Analyse démarrée — capture toutes les 4s</span>' +
+    (LIVE_ANALYSIS.task ? '<br><span style="color:#a78bfa;">🎯 Tâche: ' + escapeHtml(LIVE_ANALYSIS.task) + '</span>' : '');
+  doLiveAnalysisFrame();
+  LIVE_ANALYSIS.timer = setInterval(doLiveAnalysisFrame, 4000);
+  toast('▶ Analyse continue démarrée', 'success', 2000);
+}
+
+function stopLiveAnalysis() {
+  if (!LIVE_ANALYSIS.active) return;
+  LIVE_ANALYSIS.active = false;
+  clearInterval(LIVE_ANALYSIS.timer);
+  LIVE_ANALYSIS.timer = null;
+  LIVE_ANALYSIS.task = null;
+  const btn = document.getElementById('btnLiveAnalysis');
+  const icon = document.getElementById('btnLiveIcon');
+  const txt = document.getElementById('btnLiveTxt');
+  btn.classList.remove('active');
+  icon.className = 'fa-solid fa-circle-play';
+  txt.textContent = 'Démarrer analyse continue';
+  document.getElementById('liveFrameCount').style.display = 'none';
+  addLiveLog('⏹ Analyse arrêtée — ' + LIVE_ANALYSIS.count + ' analyses effectuées', '#888');
+  sendCmd('stop');
+  toast('⏹ Analyse arrêtée', 'info', 2000);
+}
+
+// [OLD duplicate removed — kept the newer surveillance version below ~line 2081]
+
+function addLiveLog(html, color = '') {
+  const log = document.getElementById('liveAnalysisLog');
+  if (!log) return;
+  const el = document.createElement('div');
+  el.style.cssText = 'padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);' + (color ? 'color:' + color + ';' : '');
+  el.innerHTML = html;
+  log.appendChild(el);
+  while (log.children.length > 60) log.removeChild(log.firstChild);
+  log.scrollTop = log.scrollHeight;
+}
+
+function startRobotTask(task) {
+  LIVE_ANALYSIS.task = task;
+  showTab('cam');
+  setTimeout(() => {
+    if (!LIVE_ANALYSIS.active) startLiveAnalysis();
+    else addLiveLog('🎯 Nouvelle tâche: ' + escapeHtml(task), '#a78bfa');
+  }, 300);
+  appendMsg('b', '🤖 Tâche lancée: <strong>' + escapeHtml(task) + '</strong><br><span style="font-size:11px;color:var(--txt2);">Le robot capture toutes les 4s et navigue automatiquement.</span>');
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
+// ========== FIN ANALYSE CONTINUE ==========
+
+async function sendChat() {
+  const inp=document.getElementById('cInp'); const msg=inp.value.trim();
+  if(!msg) return;
+  inp.value=''; document.getElementById('sendBtn').disabled=true;
+  appendMsg('u',msg); S.chatHistory.push({r:'u',c:msg});
+  MemoryDB.addConv('user',msg);
+
+  // Détection de tâche robot (cherche X, atteins Y)
+  const taskMatch = msg.match(/cherche\s+(.+)|trouve\s+(.+)|atteins\s+(.+)|va\s+vers\s+(.+)/i);
+  if (taskMatch) {
+    const task = taskMatch[1] || taskMatch[2] || taskMatch[3] || taskMatch[4];
+    if (task) {
+      startRobotTask(task);
+      document.getElementById('sendBtn').disabled=false;
+      inp.focus();
+      return;
+    }
+  }
+
+  const ty=document.createElement('div'); ty.className='msg b'; ty.innerHTML='<div class="typing"><div class="td2"></div><div class="td2"></div><div class="td2"></div></div>';
+  document.getElementById('chatMsgs').appendChild(ty); scrollChat();
+  
+  const executed = parseNaturalCommand(msg);
+  if(executed) {
+    ty.remove();
+    appendMsg('b', '✅ Commande exécutée immédiatement.');
+    document.getElementById('sendBtn').disabled=false; inp.focus();
+    return;
+  }
+  
+  try {
+    let reply;
+    if(isVisionReq(msg)){
+      ty.innerHTML='<div class="typing"><div class="td2"></div><div class="td2"></div><div class="td2"></div></div><span style="font-size:11px;">📷 Capture caméra...</span>';
+      const b64=await grabCamB64();
+      if(b64){ addPhoto('data:image/jpeg;base64,'+b64,'ia-vision'); const r=await callAI(msg,b64); reply=r.text; }
+      else { ty.remove(); appendMsg('b','📷 Impossible de prendre une photo. La caméra est peut-être occupée par le flux vidéo. Réessayez dans quelques secondes.'); document.getElementById('sendBtn').disabled=false; inp.focus(); return; }
+    } else {
+      const r=await callAI(msg); reply=r.text;
+    }
+    ty.remove();
+    const display=reply.replace(/\{[^}]*"robot_cmd"[^}]*\}/g,'').trim();
+    appendMsg('b', display||'✅ Commande envoyée.');
+    S.chatHistory.push({r:'b',c:display||'Commande envoyée.'});
+    MemoryDB.addConv('assistant',display||'Commande envoyée.');
+    parseAndExecRobotCmd(reply);
+    speakBT(display);
+    saveData();
+  } catch(e) { ty.remove(); appendMsg('err','❌ Erreur: '+e.message); }
+  document.getElementById('sendBtn').disabled=false; inp.focus();
+}
+function appendMsg(role,content,scroll=true){ const c=document.getElementById('chatMsgs'); const el=document.createElement('div'); el.className='msg '+role; el.innerHTML=content.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>'); c.appendChild(el); if(scroll)scrollChat(); }
+function scrollChat(){ const c=document.getElementById('chatMsgs'); c.scrollTop=c.scrollHeight; }
+async function aiScanCam() {
+  if (!S.camActive && !S.connected) { toast('Connectez la caméra ou le Pi d\'abord', 'warning'); return; }
+  toast('📷 Capture et analyse en cours...', 'info', 3000);
+  try {
+    const b64 = await grabCamB64();
+    if (!b64) { toast('Impossible de capturer la photo', 'error'); return; }
+    const photoUrl = 'data:image/jpeg;base64,' + b64;
+    addPhoto(photoUrl, 'scan_ia');
+    const prompt = `Tu es l'IA de surveillance du robot SentriX. Analyse cette image de caméra en détail.
+Décris précisément ce que tu vois: personnes, objets, environnement, état général.
+Signale tout danger, mouvement suspect, ou situation anormale.
+Sois concis mais précis. Réponds en français.`;
+    const res = await callAI(prompt, b64);
+    const analysis = res.text;
+    appendMsg('b', '📷 <strong>Scan IA:</strong><br><span style="font-size:13px;">' + analysis.replace(/\n/g, '<br>') + '</span>');
+    speakBT('Scan terminé. ' + analysis.substring(0, 100));
+    addAlert('inf', '📷 Scan IA', analysis.substring(0, 80) + '...', photoUrl);
+    const fullMsg = '🤖 SENTRIX — Scan IA\n' + analysis + '\n⏰ ' + new Date().toLocaleString('fr');
+    if (S.tgToken && S.tgChatId) sendTelegramPhoto(b64, fullMsg).catch(() => sendTelegramMsg(fullMsg));
+    if (S.waId && S.waToken && S.waRecipient) sendWAPhoto(b64, fullMsg);
+    showTab('ai');
+    toast('✅ Analyse envoyée sur WhatsApp et Telegram', 'success', 3000);
+  } catch(e) {
+    toast('❌ Erreur analyse: ' + e.message, 'error');
+    appendMsg('err', '❌ Erreur Scan IA: ' + e.message);
+  }
+}
+
+// ── Reconnaissance vocale ─────────────────────────────────
+function initSpeech(){
+  if('SpeechRecognition'in window||'webkitSpeechRecognition'in window){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    S.recognition=new SR(); S.recognition.lang='fr-FR'; S.recognition.continuous=false; S.recognition.interimResults=false;
+    S.recognition.onresult=e=>{ const t=e.results[0][0].transcript; document.getElementById('cInp').value=t; S.isListening=false; document.getElementById('vBtn').classList.remove('rec'); sendChat(); };
+    S.recognition.onerror=()=>{ S.isListening=false; document.getElementById('vBtn').classList.remove('rec'); };
+    S.recognition.onend=()=>{ S.isListening=false; document.getElementById('vBtn').classList.remove('rec'); };
+  }
+}
+function toggleVoice(){
+  if(!S.recognition){toast('Reconnaissance vocale non supportée','warning');return;}
+  if(S.isListening){S.recognition.stop();S.isListening=false;document.getElementById('vBtn').classList.remove('rec');}
+  else{S.recognition.start();S.isListening=true;document.getElementById('vBtn').classList.add('rec');toast('🎤 Parlez maintenant...','info',2000);}
+}
+document.getElementById('vBtn').onclick = toggleVoice;
+
+// ═══════════════════════════════════════════════════════════════════
+//  BLUETOOTH / TTS
+// ═══════════════════════════════════════════════════════════════════
+function initBluetooth(){
+  const saved=localStorage.getItem('sx_btname');
+  if(saved){ S.btName=saved; const inp=document.getElementById('btNameInput'); if(inp)inp.value=saved; setBTName(true); }
+}
+function setBTName(silent=false){ const inp=document.getElementById('btNameInput'); const name=inp?inp.value.trim():S.btName; if(!name&&!silent){toast('Entrez un nom','warning');return;} S.btName=name; localStorage.setItem('sx_btname',name); document.getElementById('btConnName').textContent=name?'🔊 '+name:'Aucune'; const stEl=document.getElementById('btConnSt'); if(stEl){stEl.className=name?'bge bg-s':'bge bg-d';stEl.textContent=name?'Configurée':'Non configurée';} if(!silent&&name)toast('✅ Enceinte configurée','success'); }
+function stopBT(){ if('speechSynthesis'in window)window.speechSynthesis.cancel(); }
+function clearBT(){ S.btName=''; localStorage.removeItem('sx_btname'); const inp=document.getElementById('btNameInput'); if(inp)inp.value=''; document.getElementById('btConnName').textContent='Aucune'; document.getElementById('btConnSt').className='bge bg-d'; document.getElementById('btConnSt').textContent='Non configurée'; }
+function updateTTSRate(v){ S.ttsRate=v/10; const labels={5:'Très lent',7:'Lent',10:'Normal',13:'Rapide',16:'Très rapide'}; const cl=Object.keys(labels).reduce((a,b)=>Math.abs(b-v)<Math.abs(a-v)?b:a); document.getElementById('ttsRateVal').textContent=labels[cl]||'Normal'; }
+function scanBluetooth(){ if(!S.connected){toast('Pi non connecté','warning');return;} wsSend({type:'bluetooth_scan'}); toast('Scan BT...','info'); }
+function renderBluetoothDevices(devices){ const c=document.getElementById('bluetoothDevicesList'); if(!c)return; if(!devices||!devices.length){c.innerHTML='<div class="txxs tc2">Aucun périphérique</div>';return;} c.innerHTML=devices.map(d=>`<div class="bt-dev" onclick="S._selectedBtAddress='${d.address}';this.classList.add('conn');toast('Sélectionné: ${escHtml(d.name||'Inconnu')}','info');"><i class="fa-brands fa-bluetooth-b" style="color:var(--accent);font-size:20px;"></i><div style="flex:1;"><div style="font-weight:600;">${escHtml(d.name||'Inconnu')}</div><div class="txxs tc2">${d.address}</div></div></div>`).join(''); }
+function connectBluetooth(){ if(!S._selectedBtAddress){toast('Aucun sélectionné','warning');return;} wsSend({type:'bluetooth_connect',address:S._selectedBtAddress}); toast('Connexion BT...','info'); }
+
+// ═══════════════════════════════════════════════════════════════════
+//  RECONNAISSANCE FACIALE
+// ═══════════════════════════════════════════════════════════════════
+async function learnFace(){
+  const name=document.getElementById('faceName').value.trim();
+  if(!name){toast('Entrez un nom','warning');return;}
+  const b64=await grabCamB64();
+  if(!b64){toast('Activez la caméra','warning');return;}
+  MemoryDB.addFace(name,b64);
+  toast(`Visage "${name}" appris!`,'success');
+  document.getElementById('faceResult').innerHTML=`✅ "${name}" enregistré.`;
+}
+async function recognizeFace(){
+  const b64=await grabCamB64();
+  if(!b64){toast('Caméra inactive','warning');return;}
+  if(MemoryDB.faces.length===0){toast('Aucun visage appris','info');return;}
+  const faceNames=MemoryDB.getFaceNames().join(', ');
+  try {
+    const prompt=`Regarde cette image. Y a-t-il une personne? Si oui, est-ce l'une de ces personnes: ${faceNames}? Réponds juste avec le nom ou "inconnu".`;
+    const r=await callAI(prompt,b64);
+    const name=r.text.trim();
+    document.getElementById('faceResult').innerHTML=`🔍 ${name}`;
+    if(name!=='inconnu') speakBT(`Bonjour ${name}, content de vous revoir!`);
+    toast(name==='inconnu'?'Visage inconnu':'Reconnu: '+name, name==='inconnu'?'info':'success');
+  } catch(e){ toast('Erreur reconnaissance','error'); }
+}
+function updateFaceList(){
+  const el=document.getElementById('faceList');
+  if(!el)return;
+  const names=MemoryDB.getFaceNames();
+  if(!names.length){el.innerHTML='Aucun visage enregistré';return;}
+  el.innerHTML='Connus: '+names.map(n=>`<span style="background:rgba(0,240,255,.1);padding:2px 6px;border-radius:4px;border:1px solid var(--primary);">${n}</span>`).join(' ');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  SUIVEUR DE LIGNE
+// ═══════════════════════════════════════════════════════════════════
+function startLineFollower(){
+  if(!S.connected){toast('Pi5 non connecté','warning');return;}
+  wsSend({type:'line_start'});
+  document.getElementById('lineBadge').textContent='Actif';
+  document.getElementById('lineBadge').className='bge bg-s';
+  addLineHistory('▶ Suiveur démarré (OpenCV)');
+  document.getElementById('lineLog').textContent='Suiveur actif – détection couleur en cours...';
+}
+function stopLineFollower(){
+  if(!S.connected){toast('Pi5 non connecté','warning');return;}
+  wsSend({type:'line_stop'});
+  document.getElementById('lineBadge').textContent='Arrêté';
+  document.getElementById('lineBadge').className='bge bg-d';
+  addLineHistory('⏹ Suiveur arrêté');
+  document.getElementById('lineLog').textContent='Suiveur arrêté.';
+}
+function navigateToRoom(room){
+  room = room || document.getElementById('customRoom').value.trim();
+  if(!room){toast('Entrez une pièce','warning');return;}
+  if(!S.connected){toast('Pi5 non connecté','warning');return;}
+  wsSend({type:'navigate_to',room});
+  toast(`🗺️ Navigation vers ${room}...`,'info');
+  addLineHistory(`🗺️ → ${room}`);
+  document.getElementById('lineLog').textContent=`Navigation vers ${room}...`;
+  const cfg=ROOM_COLORS[room];
+  if(cfg) document.getElementById('lineLog').textContent=`Navigation vers ${room} (${cfg.emoji} ligne ${cfg.color})`;
+}
+function updateRoom(room, color, emoji){
+  if(!room)return;
+  S.currentRoom=room;
+  document.getElementById('roomName').textContent=room;
+  const dot=document.getElementById('roomColorDot');
+  if(color){
+    const emojiMap={rouge:'🔴',bleu:'🔵',vert:'🟢',jaune:'🟡',orange:'🟠',violet:'🟣'};
+    if(dot)dot.textContent=emoji||emojiMap[color]||'●';
+    document.getElementById('roomColorTxt').textContent=`Ligne ${color}`;
+  } else if(emoji){
+    if(dot)dot.textContent=emoji;
+  }
+  addLineHistory(`📍 ${room}${color?' ('+color+')':''}`);
+}
+function addLineHistory(entry){
+  const el=document.getElementById('lineHistory');
+  if(!el)return;
+  const now=new Date().toLocaleTimeString('fr');
+  const div=document.createElement('div');
+  div.style.cssText='padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05);';
+  div.textContent=`[${now}] ${entry}`;
+  el.insertBefore(div,el.firstChild);
+  while(el.children.length>30)el.removeChild(el.lastChild);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  RECHERCHE INTELLIGENTE
+// ═══════════════════════════════════════════════════════════════════
+async function startIntelligentSearch(){
+  if(S.searchActive){toast('Recherche en cours','info');return;}
+  const target=document.getElementById('searchTarget').value.trim()||'personne';
+  S.searchActive=true;
+  document.getElementById('searchStatus').className='bge bg-s'; document.getElementById('searchStatus').textContent='Recherche...';
+  document.getElementById('searchBtn').style.display='none'; document.getElementById('stopSearchBtn').style.display='inline-flex';
+  document.getElementById('searchLog').textContent=`🔍 Recherche de "${target}"...`;
+  if(S.connected) wsSend({type:'patrol'});
+  if(S.searchInterval)clearInterval(S.searchInterval);
+  S.searchInterval=setInterval(async()=>{
+    if(!S.searchActive)return;
+    const b64=await grabCamB64();
+    if(!b64){ document.getElementById('searchLog').textContent='⚠️ Caméra inactive.'; stopIntelligentSearch(); return; }
+    try {
+      const r=await callAI(`Dis UNIQUEMENT "OUI" si tu vois un(e) ${target} dans cette image, sinon "NON".`,b64);
+      if(r.text.trim().toUpperCase().includes('OUI')){
+        clearInterval(S.searchInterval); S.searchInterval=null;
+        if(S.connected)wsSend({type:'move',cmd:'stop',speed:0});
+        toast(`✅ ${target} trouvé(e)!`,'success',5000);
+        document.getElementById('searchLog').textContent=`✅ ${target} trouvé(e)!`;
+        const photo=await grabCamB64();
+        if(photo){ addPhoto('data:image/jpeg;base64,'+photo,'search'); addAlert('inf',`🔍 ${target} trouvé`,`Localisé par SentriX`); }
+        stopIntelligentSearch();
+      }
+    } catch(e){ console.warn(e); }
+  },3000);
+}
+function stopIntelligentSearch(){
+  if(S.searchInterval){clearInterval(S.searchInterval);S.searchInterval=null;}
+  S.searchActive=false;
+  if(S.connected)wsSend({type:'move',cmd:'stop',speed:0});
+  document.getElementById('searchStatus').className='bge bg-d'; document.getElementById('searchStatus').textContent='Inactif';
+  document.getElementById('searchBtn').style.display='inline-flex'; document.getElementById('stopSearchBtn').style.display='none';
+  document.getElementById('searchLog').textContent='Recherche arrêtée.';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  WIFI / IR / TELEGRAM / WHATSAPP
+// ═══════════════════════════════════════════════════════════════════
+function scanWifi(){ if(!S.connected){toast('Pi non connecté','warning');return;} wsSend({type:'wifi_scan'}); toast('Scan WiFi...','info'); }
+function renderWifiList(networks){
+  const c=document.getElementById('wifiList');
+  if(!networks||!networks.length){c.innerHTML='<div class="txxs tc2">Aucun réseau</div>';return;}
+  c.innerHTML=networks.map(n=>`<div class="wi" onclick="selectWifi('${escHtml(n.ssid)}',${n.secure})"><div class="wi-info"><i class="fa-solid fa-wifi"></i><div class="wn">${escHtml(n.ssid)}</div></div><div>${n.secure?'🔒':'🌐'}</div></div>`).join('');
+}
+function selectWifi(ssid,secure){
+  if(!secure){ if(confirm(`Connecter à "${ssid}"?`))wsSend({type:'wifi_connect',ssid,password:''});}
+  else{ document.getElementById('wifiMoSSID').textContent=ssid; document.getElementById('wifiPwd').value=''; document.getElementById('wifiMo').classList.add('open'); window._pendingSSID=ssid; }
+}
+function connectWifi(){ const ssid=window._pendingSSID; const pwd=document.getElementById('wifiPwd').value; if(!ssid)return; wsSend({type:'wifi_connect',ssid,password:pwd}); closeMo('wifiMo'); toast('Connexion...','info'); }
+function manWifi(){ if(!S.connected){toast('Pi non connecté','warning');return;} const ssid=document.getElementById('manSSID').value.trim(); const pwd=document.getElementById('manPwd').value.trim(); if(!ssid){toast('SSID requis','warning');return;} wsSend({type:'wifi_connect',ssid,password:pwd}); toast('Connexion...','info'); }
+
+function addIRBtn(){ document.getElementById('irNm').value=''; document.getElementById('irCd').value=''; document.getElementById('irMoSt').textContent='Cliquez "Démarrer" puis pointez.'; document.getElementById('irLrBtn').style.display='inline-flex'; document.getElementById('irLrBtn').disabled=false; document.getElementById('irSvBtn').style.display='none'; document.getElementById('irMo').classList.add('open'); }
+function startIRLearn(){ if(!S.connected){toast('Pi non connecté','warning');return;} S.irLearning=true; wsSend({type:'ir_learn_start'}); document.getElementById('irMoSt').innerHTML='<span style="color:var(--warning)">🔴 EN ATTENTE...</span>'; document.getElementById('irLrBtn').disabled=true; setTimeout(()=>{if(S.irLearning){S.irLearning=false;wsSend({type:'ir_learn_stop'});document.getElementById('irMoSt').textContent='Timeout';document.getElementById('irLrBtn').disabled=false;}},15000); }
+function onIRCode(code,protocol){ S.irLearning=false; document.getElementById('irCd').value=code+(protocol?' ('+protocol+')':''); document.getElementById('irMoSt').innerHTML='<span style="color:var(--success)">✅ Code capturé!</span>'; document.getElementById('irLrBtn').style.display='none'; document.getElementById('irSvBtn').style.display='inline-flex'; document.getElementById('irLrBtn').disabled=false; toast('✅ Code IR capturé!','success'); }
+function saveIRCode(){ const name=document.getElementById('irNm').value.trim()||'Bouton '+(S.irCodes.length+1); const code=document.getElementById('irCd').value; if(!code){toast('Aucun code','warning');return;} S.irCodes.push({name,code}); renderIR(); closeMo('irMo'); saveData(); toast('✅ "'+name+'" sauvegardé!','success'); }
+function renderIR(){ const g=document.getElementById('irGrid'); if(!S.irCodes.length){g.innerHTML='<div class="txxs tc2" style="grid-column:1/-1;padding:20px;text-align:center;">Aucun bouton IR</div>';return;} g.innerHTML=S.irCodes.map((c,i)=>`<div class="irb hc"><i class="fa-solid fa-satellite-dish"></i><div style="font-size:12px;font-weight:700;">${escHtml(c.name)}</div><div class="irn">${c.code.substring(0,12)}...</div><div style="display:flex;gap:4px;margin-top:6px;justify-content:center;"><button onclick="sendIR(${i})" style="background:var(--success);border:none;border-radius:5px;color:#000;padding:3px 8px;cursor:pointer;">▶</button><button onclick="delIR(${i})" style="background:var(--danger);border:none;border-radius:5px;color:#fff;padding:3px 8px;cursor:pointer;">✕</button></div></div>`).join(''); }
+function sendIR(i){ const ir=S.irCodes[i]; if(S.connected)wsSend({type:'ir_send',code:ir.code}); toast('📡 IR: '+ir.name,'success',1500); }
+function delIR(i){ S.irCodes.splice(i,1); renderIR(); saveData(); }
+
+function saveTelegram(){ S.tgToken=document.getElementById('tgToken').value.trim(); S.tgChatId=document.getElementById('tgChatId').value.trim(); localStorage.setItem('sx_tg',JSON.stringify({token:S.tgToken,chatId:S.tgChatId})); document.getElementById('tgStatus').textContent=S.tgToken&&S.tgChatId?'✅ Telegram configuré':'Non configuré'; toast('Telegram sauvegardé','success'); if(S.connected&&S.tgToken&&S.tgChatId)wsSend({type:'set_telegram',token:S.tgToken,chat_id:S.tgChatId}); }
+function loadTGData(){ try{ const d=JSON.parse(localStorage.getItem('sx_tg')||'{}'); if(d.token){S.tgToken=d.token;document.getElementById('tgToken').value=d.token;} if(d.chatId){S.tgChatId=d.chatId;document.getElementById('tgChatId').value=d.chatId;} if(S.tgToken&&S.tgChatId)document.getElementById('tgStatus').textContent='✅ Telegram configuré'; }catch(e){} }
+async function testTelegram(){ if(!S.tgToken||!S.tgChatId){toast('Sauvegardez d\'abord','warning');return;} const ok=await sendTelegramMsg('🤖 SentriX test Telegram!'); toast(ok?'✅ Envoyé':'❌ Échec',ok?'success':'error'); }
+async function sendTelegramMsg(text){ if(!S.tgToken||!S.tgChatId)return false; try{ const r=await fetch(`https://api.telegram.org/bot${S.tgToken}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:S.tgChatId,text})}); const d=await r.json(); return d.ok; }catch(e){return false;} }
+function saveWhatsApp(){ S.waId=document.getElementById('waId').value.trim(); S.waToken=document.getElementById('waToken').value.trim(); S.waRecipient=document.getElementById('waRecipient').value.trim(); localStorage.setItem('sx_wa',JSON.stringify({id:S.waId,token:S.waToken,recipient:S.waRecipient})); toast('WhatsApp sauvegardé','success'); if(S.connected&&S.waId&&S.waToken&&S.waRecipient)wsSend({type:'set_whatsapp',id:S.waId,token:S.waToken,recipient:S.waRecipient}); }
+function loadWhatsApp(){ try{ const d=JSON.parse(localStorage.getItem('sx_wa')||'{}'); if(d.id){S.waId=d.id;document.getElementById('waId').value=d.id;} if(d.token){S.waToken=d.token;document.getElementById('waToken').value=d.token;} if(d.recipient){S.waRecipient=d.recipient;document.getElementById('waRecipient').value=d.recipient;} }catch(e){} }
+async function testWhatsApp(){ if(!S.waId||!S.waToken||!S.waRecipient){toast('Sauvegardez d\'abord','warning');return;} const ok=await sendWAText('🤖 SentriX test WhatsApp!'); toast(ok?'✅ Envoyé':'❌ Échec',ok?'success':'error'); }
+async function sendWAText(msg){ try{ const r=await fetch(`https://api.green-api.com/waInstance${S.waId}/sendMessage/${S.waToken}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chatId:S.waRecipient+'@c.us',message:msg})}); const d=await r.json(); return !!d.idMessage; }catch(e){return false;} }
+async function sendWAPhoto(b64, caption) {
+  if (!S.waId || !S.waToken || !S.waRecipient) return false;
+  try {
+    const blob = await (await fetch('data:image/jpeg;base64,' + b64)).blob();
+    const fd = new FormData();
+    fd.append('chatId', S.waRecipient + '@c.us');
+    fd.append('file', blob, 'sentrix.jpg');
+    if (caption) fd.append('caption', caption);
+    const r = await fetch(`https://api.green-api.com/waInstance${S.waId}/sendFileByUpload/${S.waToken}`, { method: 'POST', body: fd });
+    const d = await r.json();
+    return !!d.idMessage;
+  } catch(e) {
+    console.warn('sendWAPhoto failed, fallback to text:', e);
+    return sendWAText(caption || '📷 SentriX - Photo');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  LIVE AUDIO (Gemini 3.1 Flash Live)
+// ═══════════════════════════════════════════════════════════════════
+const LIVE_WS_URL='wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
+const MIC_RATE=16000; const OUT_RATE=24000;
+function toggleLiveKey(){ const e=document.getElementById('liveApiKey'); e.type=e.type==='password'?'text':'password'; }
+function addLiveMsg(role,txt){
+  const log=document.getElementById('liveChatLog'); if(!log)return;
+  const d=document.createElement('div'); d.style.marginBottom='6px'; d.style.borderBottom='1px solid rgba(255,255,255,.05)'; d.style.paddingBottom='4px';
+  const ic={user:'👤',gemini:'🤖',system:'⚙️',error:'⚠️'};
+  d.innerHTML=`<span style="color:#a78bfa;">${ic[role]||'•'}</span> <span style="color:#ccc;font-size:10px;">${escHtml(String(txt))}</span>`;
+  log.appendChild(d); log.scrollTop=log.scrollHeight;
+  while(log.children.length>60)log.removeChild(log.firstChild);
+}
+function setLiveStatus(ok,msg){ const b=document.getElementById('liveStatusBadge'); if(b){b.className=ok?'bge bg-s':'bge bg-d';b.textContent=ok?'Actif':'Inactif';} if(!ok&&S.liveMicActive)stopLiveMic(); }
+function setLivePill(cls,msg){ const p=document.getElementById('livePill'); const t=document.getElementById('pillTxt'); if(p)p.className='live-pill '+cls; if(t)t.textContent=msg; }
+function animAiBar(on){ cancelAnimationFrame(S.liveAiBarRaf); const bars=document.querySelectorAll('#aiBar .ai-b'); if(!on){bars.forEach(b=>{b.style.height='3px';b.style.opacity='.15';});return;} function step(){S.liveAiBarRaf=requestAnimationFrame(step);bars.forEach(b=>{b.style.height=(3+Math.random()*34)+'px';b.style.opacity=(.35+Math.random()*.65).toString();});}step(); }
+async function connectLive(){
+  const key=document.getElementById('liveApiKey').value.trim();
+  if(!key){addLiveMsg('error','Entrez la clé API');return;}
+  if(S.liveWs)await disconnectLive();
+  setLiveStatus(false,'Connexion...');
+  const ws=new WebSocket(`${LIVE_WS_URL}?key=${encodeURIComponent(key)}`);
+  S.liveWs=ws;
+  ws.onopen=()=>{
+    const voice=document.getElementById('liveVoice').value;
+    const sys=document.getElementById('liveSystem').value.trim() + "\n\n" + buildSystemPrompt();
+    const msg={
+      config:{
+        model:GEMINI_LIVE_MODEL,
+        responseModalities:['AUDIO'],
+        speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:voice}}},
+        systemInstruction:sys?{parts:[{text:sys}]}:undefined
+      }
+    };
+    ws.send(JSON.stringify(msg));
+  };
+  ws.onmessage=async evt=>{
+    let data; const raw=evt.data instanceof Blob?await evt.data.text():evt.data;
+    try{data=JSON.parse(raw);}catch(e){return;}
+    if(data.setupComplete||data.configComplete){S.liveConnected=true;setLiveStatus(true,'Connecté');addLiveMsg('system','OK - Connecté.');document.getElementById('liveMicBtn').disabled=false;}
+    if(data.serverContent?.modelTurn?.parts){
+      for(const p of data.serverContent.modelTurn.parts){
+        if(p.text){
+          addLiveMsg('gemini',p.text);
+          appendMsg('b', p.text);
+          parseAndExecRobotCmd(p.text);
+        }
+        if(p.inlineData?.mimeType?.startsWith('audio/'))playLiveChunk(p.inlineData.data);
+      }
+    }
+    if(data.error)addLiveMsg('error','ERREUR: '+(data.error.message||''));
+  };
+  ws.onerror=()=>{setLiveStatus(false,'Erreur');addLiveMsg('error','Erreur WS');};
+  ws.onclose=()=>{if(S.liveWs===ws){S.liveConnected=false;setLiveStatus(false,'Déconnecté');stopLiveMic(true);}};
+}
+async function disconnectLive(){if(S.liveWs){try{S.liveWs.close();}catch(e){}S.liveWs=null;}S.liveConnected=false;stopLiveMic(true);setLiveStatus(false,'Déconnecté');document.getElementById('liveMicBtn').disabled=true;}
+function toggleLiveMic(){if(S.liveMicActive)stopLiveMic(true);else startLiveMic();}
+async function startLiveMic(){
+  if(!S.liveConnected){addLiveMsg('error','Connectez-vous d\'abord');return;}
+  try{
+    // Reutiliser le stream existant si possible (evite de redemander la permission)
+    if(!S.liveMicStream || !S.liveMicStream.active){
+      S.liveMicStream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true}});
+    }
+    const stream=S.liveMicStream;
+    if(!S.liveMicCtx){
+      S.liveMicCtx=new(window.AudioContext||window.webkitAudioContext)();
+    }
+    const ctx=S.liveMicCtx;
+    S.liveAnalyser=ctx.createAnalyser(); S.liveAnalyser.fftSize=256;
+    const src=ctx.createMediaStreamSource(stream); src.connect(S.liveAnalyser);
+    const proc=ctx.createScriptProcessor(4096,1,1);
+    proc.onaudioprocess=e=>{
+      if(!S.liveMicActive)return;
+      if(!S.liveConnected||!S.liveWs||S.liveWs.readyState!==WebSocket.OPEN)return;
+      let inp=e.inputBuffer.getChannelData(0);
+      if(ctx.sampleRate!==MIC_RATE){
+        const ratio=ctx.sampleRate/MIC_RATE; const outLen=Math.round(inp.length/ratio); const out=new Float32Array(outLen);
+        for(let i=0;i<outLen;i++){const p=i*ratio;const lo=Math.floor(p);const hi=Math.min(lo+1,inp.length-1);out[i]=inp[lo]*(1-(p-lo))+inp[hi]*(p-lo);}
+        inp=out;
+      }
+      const pcm=new Int16Array(inp.length);
+      for(let i=0;i<pcm.length;i++){const s=Math.max(-1,Math.min(1,inp[i]));pcm[i]=s<0?s*0x8000:s*0x7FFF;}
+      const bytes=new Uint8Array(pcm.buffer); let b64=''; for(let i=0;i<bytes.byteLength;i++)b64+=String.fromCharCode(bytes[i]);
+      S.liveWs.send(JSON.stringify({realtimeInput:{audio:{data:btoa(b64),mimeType:`audio/pcm;rate=${MIC_RATE}`}}}));
+    };
+    src.connect(proc); proc.connect(ctx.destination); S.liveMicProc=proc;
+    S.liveMicActive=true;
+    document.getElementById('liveMicBtn').classList.add('live','recording');
+    document.getElementById('liveMicIcon').textContent='⏹'; document.getElementById('liveMicLabel').textContent='EN DIRECT';
+    setLivePill('listening','🎙 Écoute...'); drawLiveWave(); addLiveMsg('system','🎙 Micro actif');
+  }catch(e){addLiveMsg('error','Micro: '+e.message);}
+}
+function stopLiveMic(destroyStream=false){
+  if(S.liveMicProc){try{S.liveMicProc.disconnect();}catch(e){}S.liveMicProc=null;}
+  // Ne tuer le stream QUE si destroyStream=true (deconnexion complete)
+  if(destroyStream && S.liveMicStream){S.liveMicStream.getTracks().forEach(t=>t.stop());S.liveMicStream=null;}
+  if(destroyStream && S.liveMicCtx){S.liveMicCtx.close().catch(()=>{});S.liveMicCtx=null;S.liveAnalyser=null;}
+  cancelAnimationFrame(S.liveAnimId);
+  const cv=document.getElementById('micCanvas'); if(cv){const c=cv.getContext('2d');c.fillStyle='#10151f';c.fillRect(0,0,cv.width,cv.height);}
+  S.liveMicActive=false;
+  document.getElementById('liveMicBtn').classList.remove('live','recording');
+  document.getElementById('liveMicIcon').textContent='🎙'; document.getElementById('liveMicLabel').textContent='PARLER ↕';
+  if(S.liveConnected)setLivePill('','Micro arrêté');
+}
+function drawLiveWave(){
+  if(!S.liveAnalyser)return;
+  const cv=document.getElementById('micCanvas'); if(!cv)return;
+  const w=cv.clientWidth||400, h=cv.clientHeight||50; cv.width=w; cv.height=h;
+  const c=cv.getContext('2d');
+  function draw(){
+    S.liveAnimId=requestAnimationFrame(draw);
+    if(!S.liveMicActive||!S.liveAnalyser){c.fillStyle='#10151f';c.fillRect(0,0,w,h);return;}
+    const data=new Uint8Array(S.liveAnalyser.frequencyBinCount); S.liveAnalyser.getByteTimeDomainData(data);
+    c.fillStyle='#10151f'; c.fillRect(0,0,w,h);
+    c.beginPath(); c.strokeStyle='#7c3aed'; c.lineWidth=2;
+    const step=w/data.length;
+    for(let i=0;i<data.length;i++){const y=(data[i]/128)*(h/2)+h/2;i===0?c.moveTo(0,y):c.lineTo(i*step,y);}
+    c.stroke();
+  }
+  draw();
+}
+function ensureLiveOutCtx(){
+  if(!S.liveOutCtx||S.liveOutCtx.state==='closed'){S.liveOutCtx=new(window.AudioContext||window.webkitAudioContext)({sampleRate:OUT_RATE});S.liveNextPlayTime=0;}
+  if(S.liveOutCtx.state==='suspended')S.liveOutCtx.resume();
+  return S.liveOutCtx;
+}
+function playLiveChunk(b64){
+  const ctx=ensureLiveOutCtx();
+  const bin=atob(b64); const raw=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)raw[i]=bin.charCodeAt(i);
+  const pcm16=new Int16Array(raw.buffer); if(!pcm16.length)return;
+  const f32=new Float32Array(pcm16.length); for(let i=0;i<pcm16.length;i++)f32[i]=pcm16[i]/32768;
+  const buf=ctx.createBuffer(1,f32.length,OUT_RATE); buf.copyToChannel(f32,0);
+  const src=ctx.createBufferSource(); src.buffer=buf; src.connect(ctx.destination);
+  const LOOKAHEAD=0.3; const now=ctx.currentTime;
+  const startAt=S.liveNextPlayTime>now?S.liveNextPlayTime:now+LOOKAHEAD;
+  src.start(startAt); S.liveNextPlayTime=startAt+f32.length/OUT_RATE;
+  if(!S.liveAiSpeaking){S.liveAiSpeaking=true;setLivePill('speaking','🔊 Je parle...');animAiBar(true);}
+  src.onended=()=>{if(ctx.currentTime>=S.liveNextPlayTime-.05){S.liveAiSpeaking=false;animAiBar(false);if(S.liveConnected)setLivePill(S.liveMicActive?'listening':'','');}};
+}
+function clearLiveLog(){ document.getElementById('liveChatLog').innerHTML=''; addLiveMsg('system','Log effacé.'); }
+
+// ═══════════════════════════════════════════════════════════════════
+//  PHOTOS & UTILITAIRES
+// ═══════════════════════════════════════════════════════════════════
+function addPhoto(src,source='robot'){
+  if(!src)return;
+  const imgSrc=src.startsWith('data:')?src:'data:image/jpeg;base64,'+src;
+  S.photos.unshift({src:imgSrc,source,time:new Date().toLocaleTimeString('fr')});
+  if(S.photos.length>20)S.photos.pop();
+  renderPhotos(); document.getElementById('photoGal').style.display='block';
+  saveData();
+}
+function renderPhotos(){
+  const list=document.getElementById('photoList'); if(!list)return;
+  list.innerHTML=S.photos.map((p,i)=>`<div class="pt" onclick="openPhoto('${p.src}')"><img src="${p.src}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 60 45\\'%3E%3Crect fill=\\'%231a1a25\\' width=\\'60\\' height=\\'45\\'/%3E%3Ctext x=\\'30\\' y=\\'28\\' font-size=\\'16\\' text-anchor=\\'middle\\' fill=\\'%23666\\'%3E📷%3C/text%3E%3C/svg%3E'"><div class="pt-t">${p.time}</div></div>`).join('');
+}
+function openPhoto(src){ document.getElementById('photoMoImg').src=src; document.getElementById('photoMo').classList.add('open'); }
+function clearPhotos(){ S.photos=[]; renderPhotos(); document.getElementById('photoGal').style.display='none'; saveData(); }
+
+function resetApp(){ if(!confirm('Réinitialiser?'))return; localStorage.clear(); location.reload(); }
+function saveRobotSt(){ S.robotIP=document.getElementById('stIP').value.trim(); S.robotPort=parseInt(document.getElementById('stPort').value)||8765; document.getElementById('rIP').value=S.robotIP; document.getElementById('rPort').value=S.robotPort; saveData(); toast('Pi5 sauvegardé','success'); }
+function saveAPIKeys(){
+  const k1 = document.getElementById('ak1').value.trim();
+  const k2 = document.getElementById('ak2').value.trim();
+  const k3 = document.getElementById('ak3').value.trim();
+  GEMINI_KEYS = [k1,k2,k3].filter(k => k.length > 0);
+  // Sauvegarder dans localStorage
+  localStorage.setItem('sentrix_ak1', k1);
+  localStorage.setItem('sentrix_ak2', k2);
+  localStorage.setItem('sentrix_ak3', k3);
+  // Sauvegarder aussi la clé Live
+  const liveKey = document.getElementById('liveApiKey').value.trim();
+  if(liveKey) localStorage.setItem('sentrix_liveAk', liveKey);
+  saveData(); toast('Cles API sauvegardees!','success');
+  updateAkLbl();
+}
+function togSt(btnId,key){
+  const el=document.getElementById(btnId);
+  S.settings[key]=!S.settings[key];
+  el.textContent=S.settings[key]?'ON':'OFF';
+  S.settings[key]?el.classList.add('act'):el.classList.remove('act');
+  saveData();
+  // Synchroniser vers le Pi si connecté
+  if(S.connected) wsSend({type:'set_alert_settings',alertMotion:S.settings.alertMotion,alertIntruder:S.settings.alertIntruder,alertEmotion:S.settings.alertEmotion});
+}
+function saveData(){
+  try{ localStorage.setItem('sx',JSON.stringify({robotIP:S.robotIP,robotPort:S.robotPort,irCodes:S.irCodes,settings:S.settings,chatHistory:S.chatHistory.slice(-40),alerts:S.alerts.slice(-60),photos:S.photos.slice(-20)})); }catch(e){}
+}
+function loadData(){
+  try{
+    const d=JSON.parse(localStorage.getItem('sx')||'{}');
+    if(d.robotIP){ S.robotIP=d.robotIP; document.getElementById('rIP').value=d.robotIP; document.getElementById('stIP').value=d.robotIP; }
+    if(d.robotPort){ S.robotPort=d.robotPort; document.getElementById('rPort').value=d.robotPort; document.getElementById('stPort').value=d.robotPort; }
+    if(d.irCodes){ S.irCodes=d.irCodes; renderIR(); }
+    if(d.settings){ S.settings={...S.settings,...d.settings}; Object.entries({alertFire:'stFire',alertMotion:'stMotion',alertGas:'stGas',alertIntruder:'stIntruder',alertEmotion:'stEmotion'}).forEach(([k,id])=>{ const el=document.getElementById(id); if(el&&S.settings[k]){el.textContent='ON';el.classList.add('act');} }); }
+    if(d.chatHistory){ S.chatHistory=d.chatHistory; d.chatHistory.slice(-6).forEach(m=>appendMsg(m.r,m.c,false)); }
+    if(d.alerts){ S.alerts=d.alerts; renderAlerts(); if(S.alerts.length){const nb=document.getElementById('alertNb');if(nb){nb.style.display='flex';nb.textContent=S.alerts.length;}} }
+    if(d.photos){ S.photos=d.photos; renderPhotos(); if(S.photos.length)document.getElementById('photoGal').style.display='block'; }
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  MUSIQUE
+// ═══════════════════════════════════════════════════════════════════
+let musicPlayer = null;
+let musicPlaylist = [];
+let musicCurrentIdx = 0;
+let musicPlaying = false;
+function onYouTubeIframeAPIReady() {
+  musicPlayer = new YT.Player('ytPlayer', { height: '200', width: '200', playerVars: { autoplay: 0, controls: 0 }, events: { onStateChange: (e) => { if(e.data === YT.PlayerState.PLAYING) { musicPlaying = true; updateMusicPlayBtn(); } else if(e.data === YT.PlayerState.PAUSED) { musicPlaying = false; updateMusicPlayBtn(); } else if(e.data === YT.PlayerState.ENDED) { musicNext(); } } } });
+}
+function toggleMusic() { if(!musicPlayer) return; if(musicPlaying) musicPlayer.pauseVideo(); else musicPlayer.playVideo(); }
+function updateMusicPlayBtn() { const icon = document.getElementById('musicPlayIcon'); if(icon) icon.className = musicPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'; }
+function musicPrev() { if(musicCurrentIdx > 0) musicCurrentIdx--; else musicCurrentIdx = musicPlaylist.length-1; playCurrentTrack(); }
+function musicNext() { if(musicCurrentIdx < musicPlaylist.length-1) musicCurrentIdx++; else if(musicPlaylist.length) musicCurrentIdx = 0; playCurrentTrack(); }
+function playCurrentTrack() { if(!musicPlaylist.length || !musicPlayer) return; const track = musicPlaylist[musicCurrentIdx]; if(!track) return; musicPlayer.loadVideoById(track.videoId); musicPlayer.playVideo(); document.getElementById('musicTitle').textContent = track.title; document.getElementById('musicArtist').textContent = track.channel; document.getElementById('musicThumb').src = track.thumb; musicPlaying = true; updateMusicPlayBtn(); }
+async function searchMusic() {
+  const query = document.getElementById('musicSearchInp').value.trim();
+  if(!query) { toast('Entrez un titre', 'warning'); return; }
+  const results = await fetchYTResults(query);
+  if(!results || !results.length) { toast('Aucun résultat', 'warning'); return; }
+  musicPlaylist = results;
+  musicCurrentIdx = 0;
+  playCurrentTrack();
+  renderMusicResults(results);
+  document.getElementById('playlistCard').style.display = 'block';
+}
+async function fetchYTResults(query) {
+  const instances = ['https://inv.nadeko.net','https://invidious.nerdvpn.de','https://invidious.privacyredirect.com','https://vid.puffyan.us'];
+  for(const host of instances) {
+    try {
+      const url = `${host}/api/v1/search?q=${encodeURIComponent(query)}&type=video&fields=videoId,title,author,lengthSeconds,videoThumbnails&page=1`;
+      const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if(!r.ok) continue;
+      const data = await r.json();
+      if(!data || !data.length) continue;
+      return data.slice(0, 8).map(v => ({ videoId: v.videoId, title: v.title || 'Inconnu', channel: v.author || '', thumb: (v.videoThumbnails && v.videoThumbnails.find(t => t.quality === 'medium')?.url) || `https://img.youtube.com/vi/${v.videoId}/mqdefault.jpg` }));
+    } catch(e) {}
+  }
+  return [];
+}
+function renderMusicResults(results) {
+  const grid = document.getElementById('musicResults');
+  grid.style.display = 'grid';
+  grid.innerHTML = results.map((v,i) => `<div onclick="playFromResult(${i})" style="background:rgba(0,0,0,.3);border-radius:9px;border:1px solid var(--border);cursor:pointer;margin-bottom:8px;"><img src="${v.thumb}" style="width:100%;aspect-ratio:16/9;object-fit:cover;"><div style="padding:7px;"><div style="font-size:11px;font-weight:600;">${escHtml(v.title)}</div><div style="font-size:10px;color:var(--txt2);">${escHtml(v.channel)}</div></div></div>`).join('');
+}
+function playFromResult(idx) { musicCurrentIdx = idx; playCurrentTrack(); }
+function toggleShuffle() { toast('Aléatoire non implémenté', 'info'); }
+function toggleRepeat() { toast('Répétition non implémentée', 'info'); }
+function clearPlaylist() { musicPlaylist = []; musicCurrentIdx = 0; document.getElementById('playlistCard').style.display = 'none'; if(musicPlayer) musicPlayer.stopVideo(); musicPlaying = false; updateMusicPlayBtn(); }
+
+// ═══════════════════════════════════════════════════════════════════
+//  TELEGRAM + WHATSAPP AVEC PHOTO
+// ═══════════════════════════════════════════════════════════════════
+async function sendTelegramPhoto(b64, caption) {
+  if (!S.tgToken || !S.tgChatId) return false;
+  try {
+    const blob = await (await fetch('data:image/jpeg;base64,' + b64)).blob();
+    const fd = new FormData();
+    fd.append('chat_id', S.tgChatId);
+    fd.append('photo', blob, 'sentrix.jpg');
+    if (caption) fd.append('caption', caption);
+    const r = await fetch(`https://api.telegram.org/bot${S.tgToken}/sendPhoto`, { method: 'POST', body: fd });
+    const d = await r.json(); return d.ok;
+  } catch(e) { return false; }
+}
+
+async function sendAlertWithPhoto(title, msg, alertType) {
+  const b64 = await grabCamB64();
+  const fullMsg = `🤖 SENTRIX\n${title}\n${msg}\n⏰ ${new Date().toLocaleString('fr')}`;
+  if (b64) {
+    addPhoto('data:image/jpeg;base64,' + b64, 'alerte');
+    addAlert(alertType || 'dng', title, msg, 'data:image/jpeg;base64,' + b64);
+    // Telegram avec photo
+    if (S.tgToken && S.tgChatId) {
+      sendTelegramPhoto(b64, fullMsg).catch(() => sendTelegramMsg(fullMsg));
+    }
+    // WhatsApp avec photo via Green-API
+    if (S.waId && S.waToken && S.waRecipient) {
+      sendWAPhoto(b64, fullMsg);
+    }
+  } else {
+    addAlert(alertType || 'dng', title, msg);
+    sendTelegramMsg(fullMsg);
+    if (S.waId && S.waToken && S.waRecipient) sendWAText(fullMsg);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  ANALYSE CONTINUE – version étendue avec intrus + émotion
+// ═══════════════════════════════════════════════════════════════════
+const _lastEmotionAlert = { time: 0 };
+const _lastIntruderAlert = { time: 0 };
+const _lastMotionAlert = { time: 0 };
+const _prevFrameHash = { val: null };
+
+// ═══════════════════════════════════════════════════════════════════
+//  PROMPT GEMINI SURVEILLANCE – retourne un JSON structuré précis
+// ═══════════════════════════════════════════════════════════════════
+function buildSurveillancePrompt() {
+  const knownFaces = MemoryDB.getFaceNames();
+  const knownStr = knownFaces.length ? `Personnes connues: ${knownFaces.join(', ')}.` : 'Aucun visage enregistré.';
+  return `Tu es le système de vision d'un robot de surveillance. Analyse cette image avec une HAUTE PRÉCISION.
+${knownStr}
+
+Réponds UNIQUEMENT avec ce JSON (rien d'autre, pas de texte autour):
+{
+  "description": "Description factuelle courte en français de la scène",
+  "motion_detected": true/false,
+  "motion_description": "Décris précisément ce qui bouge: personne qui marche, objet tombé, animal, ombre, etc. Vide si pas de mouvement.",
+  "person_present": true/false,
+  "person_count": 0,
+  "person_known": true/false,
+  "known_name": "nom si reconnu parmi les personnes connues, sinon vide",
+  "emotion": "neutre|souriant|triste|pleure|peur|en_colere|inconnu",
+  "emotion_confidence": "haute|moyenne|faible",
+  "fire_detected": true/false,
+  "fire_description": "Description si feu/fumée visible, vide sinon",
+  "danger_level": "aucun|faible|moyen|eleve|critique",
+  "danger_description": "Description précise du danger détecté, vide si aucun",
+  "exercise_detected": false
+}
+
+RÈGLES STRICTES:
+- motion_detected=true UNIQUEMENT si tu vois clairement un mouvement ou changement d'état dans l'image (personne qui marche/court, objet qui bouge, animal). PAS pour une scène statique.
+- person_known=true SEULEMENT si tu reconnais clairement l'une des personnes connues listées.
+- emotion: analyse le visage si visible, sinon "inconnu".
+- fire_detected=true SEULEMENT si tu vois des flammes, fumée dense ou lueur d'incendie.
+- Sois PRÉCIS et CONSERVATEUR: ne détecte que ce qui est clairement visible.`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  TRAITEMENT DES RÉSULTATS GEMINI SURVEILLANCE
+// ═══════════════════════════════════════════════════════════════════
+async function handleSurveillanceResult(b64, analysis, ts) {
+  const now = Date.now();
+
+  // Affichage log avec couleur selon danger
+  const dangerColors = { aucun: 'var(--txt2)', faible: 'var(--txt)', moyen: 'var(--warning)', eleve: 'var(--danger)', critique: '#ff0000' };
+  const color = dangerColors[analysis.danger_level] || 'var(--txt)';
+  let logHtml = `<span style="color:#888;font-size:10px;">[${ts}]</span> `;
+  if (analysis.danger_level !== 'aucun') logHtml += `<strong style="color:${color};">[${analysis.danger_level.toUpperCase()}]</strong> `;
+  if (analysis.person_present) logHtml += `👤${analysis.person_count > 1 ? analysis.person_count : ''} `;
+  if (analysis.motion_detected) logHtml += `🏃 `;
+  if (analysis.fire_detected) logHtml += `🔥 `;
+  logHtml += `<span style="color:${color};">${escapeHtml(analysis.description)}</span>`;
+  addLiveLog(logHtml);
+
+  const photoDataUrl = b64 ? 'data:image/jpeg;base64,' + b64 : null;
+
+  // --- MOUVEMENT DÉTECTÉ (Gemini, haute précision)
+  if (analysis.motion_detected && S.settings.alertMotion && (now - _lastMotionAlert.time) > 20000) {
+    _lastMotionAlert.time = now;
+    const desc = analysis.motion_description || analysis.description;
+    const caption = `🚨 MOUVEMENT DÉTECTÉ\n${desc}\n⏰ ${new Date().toLocaleString('fr')}`;
+    if (photoDataUrl) {
+      addPhoto(photoDataUrl, 'mouvement');
+      addAlert('dng', '🚨 Mouvement détecté', desc, photoDataUrl);
+      if (S.tgToken && S.tgChatId) sendTelegramPhoto(b64, caption).catch(() => sendTelegramMsg(caption));
+      if (S.waId && S.waToken && S.waRecipient) sendWAPhoto(b64, caption);
+    }
+    navigator.vibrate && navigator.vibrate([300]);
+  }
+
+  // --- INTRUS INCONNU
+  if (analysis.person_present && !analysis.person_known && S.settings.alertIntruder && (now - _lastIntruderAlert.time) > 30000) {
+    _lastIntruderAlert.time = now;
+    const banner = document.getElementById('intruderBanner');
+    if (banner) banner.style.display = 'block';
+    navigator.vibrate && navigator.vibrate([500, 200, 500, 200, 500]);
+    speakBT('Attention ! Personne inconnue détectée devant la caméra.');
+    const caption = `🔍 INTRUS DÉTECTÉ – ${analysis.person_count} personne(s) inconnue(s)\n${analysis.description}\n⏰ ${new Date().toLocaleString('fr')}`;
+    if (photoDataUrl) {
+      addPhoto(photoDataUrl, 'intrus');
+      addAlert('dng', `🔍 INTRUS — ${analysis.person_count} inconnu(s)`, analysis.description, photoDataUrl);
+      if (S.tgToken && S.tgChatId) sendTelegramPhoto(b64, caption).catch(() => sendTelegramMsg(caption));
+      if (S.waId && S.waToken && S.waRecipient) sendWAPhoto(b64, caption);
+    }
+  }
+
+  // --- PERSONNE CONNUE → accueil
+  if (analysis.person_present && analysis.person_known && analysis.known_name) {
+    const greet = `Bonjour ${analysis.known_name}, content de vous revoir !`;
+    if ((now - _lastIntruderAlert.time) > 60000) speakBT(greet); // éviter spam
+  }
+
+  // --- ÉMOTION TRISTE / CONSOLATION
+  if (analysis.person_present && S.settings.alertEmotion && (now - _lastEmotionAlert.time) > 60000) {
+    if (['triste', 'pleure', 'peur'].includes(analysis.emotion) && analysis.emotion_confidence !== 'faible') {
+      _lastEmotionAlert.time = now;
+      addAlert('warning', `😢 Émotion: ${analysis.emotion}`, analysis.description);
+      const consolations = [
+        "Je te vois, et je suis là pour toi. Tout va bien se passer. Tu n'es pas seul(e). 💙",
+        "Parfois la vie est difficile, mais tu es plus fort(e) que tu ne le crois. 🤗",
+        "Tu as le droit de ne pas aller bien. Prends le temps qu'il te faut. Je suis là. 💜",
+        "Je vois que tu traverses quelque chose de difficile. Parle-moi, je t'écoute. 🌟",
+        "Chaque tempête finit par passer. Tu es courageux(se) de tenir debout. ✨"
+      ];
+      const msg = consolations[Math.floor(Math.random() * consolations.length)];
+      appendMsg('b', '💙 ' + msg);
+      speakBT(msg);
+      if (S.tgToken && S.tgChatId) sendTelegramMsg(`😢 SentriX: visage ${analysis.emotion} détecté.\n${new Date().toLocaleString('fr')}`);
+    }
+  }
+
+  // --- FEU / INCENDIE
+  if (analysis.fire_detected && S.settings.alertFire) {
+    const caption = `🔥 INCENDIE DÉTECTÉ!\n${analysis.fire_description || analysis.description}\n⏰ ${new Date().toLocaleString('fr')}`;
+    if (photoDataUrl) {
+      addPhoto(photoDataUrl, 'incendie');
+      addAlert('fire', '🔥 FEU DÉTECTÉ', analysis.fire_description || analysis.description, photoDataUrl);
+      if (S.tgToken && S.tgChatId) sendTelegramPhoto(b64, caption).catch(() => sendTelegramMsg(caption));
+      if (S.waId && S.waToken && S.waRecipient) sendWAPhoto(b64, caption);
+    }
+    navigator.vibrate && navigator.vibrate([500, 100, 500, 100, 500]);
+    speakBT('Alerte incendie ! Feu ou fumée détectés !');
+  }
+
+  // --- DANGER CRITIQUE général
+  if (['eleve', 'critique'].includes(analysis.danger_level) && analysis.danger_description) {
+    if ((now - _lastMotionAlert.time) > 10000 && !analysis.fire_detected) {
+      const caption = `⚠️ DANGER ${analysis.danger_level.toUpperCase()}\n${analysis.danger_description}\n⏰ ${new Date().toLocaleString('fr')}`;
+      addAlert('dng', `⚠️ Danger ${analysis.danger_level}`, analysis.danger_description, photoDataUrl);
+      if (S.tgToken && S.tgChatId && photoDataUrl) sendTelegramPhoto(b64, caption).catch(() => sendTelegramMsg(caption));
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  ANALYSE CONTINUE – Gemini JSON structuré, sans OpenCV
+// ═══════════════════════════════════════════════════════════════════
+async function doLiveAnalysisFrame() {
+  if (!LIVE_ANALYSIS.active) return;
+  const b64 = await grabCamB64();
+  if (!b64) { addLiveLog('⚠️ Caméra indisponible', 'var(--warning)'); return; }
+  LIVE_ANALYSIS.count++;
+  document.getElementById('liveFrameCount').textContent = LIVE_ANALYSIS.count + ' analyses';
+  const ts = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  // Mode TÂCHE ROBOT (navigation autonome)
+  if (LIVE_ANALYSIS.task) {
+    const prompt = `Tu contrôles un robot physique. Sa caméra voit l'image ci-jointe.
+Tâche en cours: "${LIVE_ANALYSIS.task}"
+Réponds UNIQUEMENT avec ce JSON (rien d'autre):
+{"action":"forward|left|right|stop|done","reason":"explication courte en français","found":true|false}`;
+    try {
+      const res = await callAI(prompt, b64);
+      let nav;
+      try { nav = JSON.parse((res.text.match(/\{[^}]+\}/) || [res.text])[0]); }
+      catch(e) { nav = { action: ['forward','left','right','done'].find(a=>res.text.toLowerCase().includes(a))||'left', reason: res.text.substring(0,100), found: false }; }
+      const labels = { forward:'⬆ AVANCE', left:'⬅ GAUCHE', right:'➡ DROITE', stop:'⏹ STOP', done:'✅ ACCOMPLIE' };
+      const colors = { forward:'var(--success)', left:'var(--primary)', right:'var(--primary)', stop:'var(--warning)', done:'#ffd60a' };
+      addLiveLog(`<span style="color:#888;font-size:10px;">[${ts}]</span> <strong style="color:${colors[nav.action]||'var(--txt)'};">${labels[nav.action]||nav.action}</strong> — ${nav.reason||''}`);
+      if (nav.action === 'done') {
+        sendCmd('stop'); stopLiveAnalysis();
+        appendMsg('b', '✅ Tâche accomplie : ' + LIVE_ANALYSIS.task);
+        addAlert('info', '✅ Tâche robot accomplie', LIVE_ANALYSIS.task);
+        toast('✅ Tâche accomplie !', 'success', 5000);
+        navigator.vibrate && navigator.vibrate([200,100,200,100,400]);
+      } else if (nav.action === 'stop') {
+        sendCmd('backward');
+        setTimeout(()=>{ if(LIVE_ANALYSIS.active) sendCmd('left'); }, 800);
+        setTimeout(()=>{ if(LIVE_ANALYSIS.active) sendCmd('stop'); }, 1500);
+      } else {
+        sendCmd(nav.action);
+        setTimeout(()=>{ if(LIVE_ANALYSIS.active) sendCmd('stop'); }, nav.action==='forward'?2500:800);
+      }
+    } catch(e) { addLiveLog('❌ ' + e.message, 'var(--danger)'); }
+    return;
+  }
+
+  // Mode SURVEILLANCE – prompt JSON structuré, analyse complète par Gemini
+  try {
+    const res = await callAI(buildSurveillancePrompt(), b64);
+    let analysis;
+    try {
+      // Extraire le JSON même si Gemini ajoute du texte autour
+      const jsonMatch = res.text.match(/\{[\s\S]*\}/);
+      analysis = JSON.parse(jsonMatch ? jsonMatch[0] : res.text);
+    } catch(e) {
+      // Fallback : afficher le texte brut si JSON mal formé
+      addLiveLog(`<span style="color:#888;font-size:10px;">[${ts}]</span> ${escapeHtml(res.text.substring(0, 150))}`);
+      return;
+    }
+    await handleSurveillanceResult(b64, analysis, ts);
+  } catch(e) { addLiveLog('❌ ' + e.message, 'var(--danger)'); }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  EXERCICES IA
+// ═══════════════════════════════════════════════════════════════════
+let _exoB64 = null;
+
+async function exoFromCam() {
+  const b64 = await grabCamB64();
+  if (!b64) { toast('Activez la caméra d\'abord', 'warning'); return; }
+  _exoB64 = b64;
+  const prev = document.getElementById('exoImgPrev');
+  prev.src = 'data:image/jpeg;base64,' + b64;
+  prev.style.display = 'block';
+  showTab('exercices');
+  toast('📷 Image capturée! Analyse en cours...', 'success');
+  setTimeout(() => solveExercice(), 300);
+}
+
+function exoFromFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    _exoB64 = dataUrl.split(',')[1];
+    const prev = document.getElementById('exoImgPrev');
+    prev.src = dataUrl;
+    prev.style.display = 'block';
+    toast('📂 Image chargée! Cliquez "Résoudre avec l\'IA"', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function solveExercice() {
+  if (!_exoB64) { toast('Capturez ou chargez une image d\'abord', 'warning'); return; }
+  const instr = document.getElementById('exoInstruction').value.trim();
+  const btn = document.getElementById('exoBtn');
+  const result = document.getElementById('exoResult');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyse en cours...';
+  result.style.display = 'block';
+  result.innerHTML = '<span style="color:var(--txt2);">⏳ L\'IA analyse votre exercice...</span>';
+
+  const prompt = `Tu es un professeur expert. Regarde attentivement cette image d'exercice.
+${instr ? 'Instruction spéciale: ' + instr : ''}
+
+1) Identifie le type d'exercice (mathématiques, physique, chimie, français, histoire, etc.)
+2) Lis et transcris le contenu de l'exercice
+3) Résous-le étape par étape avec des explications claires
+4) Donne la réponse finale
+
+Sois pédagogique, clair et précis. Réponds en français.`;
+
+  try {
+    const r = await callAI(prompt, _exoB64);
+    const text = r.text;
+    result.innerHTML = text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>');
+    speakBT('Voici la solution de votre exercice.');
+    // Historique
+    const hist = document.getElementById('exoHistory');
+    const now = new Date().toLocaleTimeString('fr');
+    const entry = document.createElement('div');
+    entry.style.cssText = 'padding:6px;border-bottom:1px solid var(--border);font-size:11px;';
+    entry.innerHTML = `<span style="color:var(--txt2);">[${now}]</span> ${escapeHtml(text.substring(0, 80))}...`;
+    if (hist.textContent === 'Aucune analyse') hist.innerHTML = '';
+    hist.insertBefore(entry, hist.firstChild);
+  } catch(e) {
+    result.innerHTML = '<span style="color:var(--danger);">❌ Erreur: ' + escapeHtml(e.message) + '</span>';
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-brain"></i> Résoudre avec l\'IA';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  RAPPELS PERSONNES ÂGÉES
+// ═══════════════════════════════════════════════════════════════════
+const REMINDERS = [];
+let _reminderInterval = null;
+
+function addReminder() {
+  const person = document.getElementById('remPerson').value.trim();
+  const msg = document.getElementById('remMsg').value.trim();
+  const time = document.getElementById('remTime').value;
+  const repeat = document.getElementById('remRepeat').value;
+  if (!msg) { toast('Entrez un message de rappel', 'warning'); return; }
+  if (!time && repeat === 'once') { toast('Entrez une heure', 'warning'); return; }
+  const rem = { id: Date.now(), person: person || 'Utilisateur', msg, time, repeat, done: false, lastFired: 0 };
+  REMINDERS.push(rem);
+  renderReminders();
+  saveReminders();
+  syncRemindersToServer();
+  document.getElementById('remPerson').value = '';
+  document.getElementById('remMsg').value = '';
+  document.getElementById('remTime').value = '';
+  toast('✅ Rappel ajouté!', 'success');
+  startReminderChecker();
+}
+
+function addReminderFromAI(cmd) {
+  // Appelé par parseAndExecRobotCmd quand l'IA retourne {"robot_cmd":"set_reminder",...}
+  const person = cmd.person || 'Utilisateur';
+  const msg = cmd.msg || 'Rappel';
+  let time = cmd.time || '';
+  const repeat = cmd.repeat || 'once';
+  // Si pas d'heure fournie, choisir dans 5 minutes
+  if (!time) {
+    const d = new Date(Date.now() + 5 * 60 * 1000);
+    time = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+  const rem = { id: Date.now(), person, msg, time, repeat, done: false, lastFired: 0 };
+  REMINDERS.push(rem);
+  renderReminders();
+  saveReminders();
+  syncRemindersToServer();
+  startReminderChecker();
+  toast(`✅ Rappel programmé: ${msg} à ${time}`, 'success', 4000);
+  appendMsg('b', `⏰ <strong>Rappel programmé</strong> pour <strong>${escHtml(person)}</strong> — ${escHtml(msg)} à ${time}`);
+}
+
+function syncRemindersToServer() {
+  if (S.connected) wsSend({ type: 'save_reminders', reminders: REMINDERS });
+}
+
+function renderReminders() {
+  const list = document.getElementById('reminderList');
+  const badge = document.getElementById('remBadge');
+  const active = REMINDERS.filter(r => !r.done).length;
+  badge.textContent = active + ' actif(s)';
+  badge.className = active > 0 ? 'bge bg-s' : 'bge bg-d';
+  if (!REMINDERS.length) { list.innerHTML = '<div class="txxs tc2" style="padding:14px;">Aucun rappel</div>'; return; }
+  const repeatLabel = { once: 'Une fois', daily: 'Chaque jour', hourly: 'Chaque heure' };
+  list.innerHTML = REMINDERS.map((r, i) => `
+    <div class="reminder-item ${r.done ? 'done' : ''}">
+      <div class="rem-info">
+        <div class="rem-name">${r.done ? '✅ ' : '⏰ '}${escHtml(r.person)} — ${escHtml(r.msg)}</div>
+        <div class="rem-time">${r.time ? 'À ' + r.time : ''} · ${repeatLabel[r.repeat] || r.repeat}</div>
+      </div>
+      <button class="rem-del" onclick="deleteReminder(${i})">✕</button>
+    </div>`).join('');
+}
+
+function deleteReminder(i) { REMINDERS.splice(i, 1); renderReminders(); saveReminders(); syncRemindersToServer(); }
+function clearAllReminders() { REMINDERS.length = 0; renderReminders(); saveReminders(); syncRemindersToServer(); }
+function saveReminders() { try { localStorage.setItem('sx_reminders', JSON.stringify(REMINDERS)); } catch(e) {} }
+function loadReminders() {
+  try {
+    const d = JSON.parse(localStorage.getItem('sx_reminders') || '[]');
+    REMINDERS.length = 0;
+    d.forEach(r => REMINDERS.push(r));
+    renderReminders();
+    if (REMINDERS.length) startReminderChecker();
+  } catch(e) {}
+}
+
+function startReminderChecker() {
+  if (_reminderInterval) return;
+  _reminderInterval = setInterval(checkReminders, 30000); // check every 30s
+  checkReminders();
+}
+
+function checkReminders() {
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nowTs = Date.now();
+  REMINDERS.forEach((r, i) => {
+    if (r.done && r.repeat === 'once') return;
+    if (nowTs - r.lastFired < 55000) return; // cooldown 55s
+    let shouldFire = false;
+    if (r.repeat === 'hourly') {
+      shouldFire = now.getSeconds() < 35; // fire once per minute window
+    } else if (r.time) {
+      const [h, m] = r.time.split(':').map(Number);
+      const remMin = h * 60 + m;
+      shouldFire = Math.abs(nowMin - remMin) <= 1;
+    }
+    if (shouldFire) {
+      r.lastFired = nowTs;
+      if (r.repeat === 'once') r.done = true;
+      fireReminder(r);
+      renderReminders();
+      saveReminders();
+    }
+  });
+}
+
+function fireReminder(r) {
+  const fullMsg = `${r.person}, rappel : ${r.msg}`;
+  speakBT(fullMsg);
+  addAlert('warning', `⏰ Rappel — ${r.person}`, r.msg);
+  appendMsg('b', `⏰ <strong>Rappel pour ${escapeHtml(r.person)}</strong> : ${escapeHtml(r.msg)}`);
+  toast(`⏰ Rappel: ${r.msg}`, 'warning', 6000);
+  navigator.vibrate && navigator.vibrate([200, 100, 200]);
+  // Envoyer aussi sur Telegram/WhatsApp
+  const tgMsg = `⏰ SENTRIX — Rappel\n👤 ${r.person}\n📌 ${r.msg}\n🕐 ${new Date().toLocaleTimeString('fr')}`;
+  if (S.tgToken && S.tgChatId) sendTelegramMsg(tgMsg);
+  if (S.waId && S.waToken && S.waRecipient) sendWAText(tgMsg);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+//  DOMOTIQUE – Relais 4 canaux
+// ═══════════════════════════════════════════════════════════════════
+const RELAY_CHANNELS = ['lumiere','ventilateur','porte','reserve'];
+const RELAY_LABELS = {lumiere:'Lumière',ventilateur:'Ventilateur',porte:'Porte',reserve:'Réserve'};
+const RELAY_ICONS = {lumiere:'💡',ventilateur:'🌀',porte:'🚪',reserve:'⚡'};
+
+// Init relay card click handlers
+function initRelayCards(){
+  RELAY_CHANNELS.forEach(ch => {
+    const card = document.getElementById('relayCard-'+ch);
+    if(card){
+      card.addEventListener('click', () => toggleRelay(ch));
+    }
+  });
+}
+
+function toggleRelay(channel){
+  if(!S.connected){toast('Pi5 non connecté','warning');return;}
+  const current = S.relays?.[channel] || false;
+  const newState = !current;
+  wsSend({type:'relay_ch', channel, state:newState});
+}
+
+function relayAll(state){
+  if(!S.connected){toast('Pi5 non connecté','warning');return;}
+  const states = {};
+  RELAY_CHANNELS.forEach(ch => states[ch] = state);
+  wsSend({type:'relay_all', states});
+  toast(state ? '⚡ Tous les relais activés' : '🔌 Tous les relais désactivés', state?'success':'info');
+}
+
+function updateRelayUI(channel, state){
+  if(!S.relays) S.relays = {};
+  S.relays[channel] = state;
+  const card = document.getElementById('relayCard-'+channel);
+  const badge = document.getElementById('relaySt-'+channel);
+  if(card) card.classList.toggle('on', state);
+  if(badge){
+    if(state){
+      badge.textContent='ON';
+      badge.style.background='rgba(0,255,136,.2)';
+      badge.style.color='var(--success)';
+      badge.style.borderColor='var(--success)';
+    } else {
+      badge.textContent='OFF';
+      badge.style.background='rgba(255,68,68,.2)';
+      badge.style.color='var(--danger)';
+      badge.style.borderColor='var(--danger)';
+    }
+  }
+  addRelayHistory(`${RELAY_ICONS[channel]||''} ${RELAY_LABELS[channel]||channel}: ${state?'ON':'OFF'}`);
+}
+
+function updateAllRelayUI(relays){
+  if(!relays) return;
+  if(!S.relays) S.relays = {};
+  Object.entries(relays).forEach(([ch, st]) => updateRelayUI(ch, st));
+}
+
+function addRelayHistory(text){
+  const el = document.getElementById('relayHistory');
+  if(!el) return;
+  const now = new Date().toLocaleTimeString('fr');
+  const div = document.createElement('div');
+  div.style.cssText = 'padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);';
+  div.textContent = `[${now}] ${text}`;
+  el.insertBefore(div, el.firstChild);
+  while(el.children.length > 30) el.removeChild(el.lastChild);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  PUSH-TO-TALK (maintenir = micro, relâcher = envoyer)
+// ═══════════════════════════════════════════════════════════════════
+function pttStart(){
+  if(!S.liveConnected){toast('Connectez d\'abord la session Live','warning');return;}
+  startLiveMic();
+}
+
+function pttStop(){
+  if(!S.liveMicActive) return;
+  // Arreter l'envoi audio MAIS garder le stream ouvert (pas de destroyStream)
+  stopLiveMic(false);
+  setLivePill('','En attente...');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',()=>{
+  MemoryDB.init();
+  loadData(); loadTGData(); loadWhatsApp(); loadReminders();
+  loadGeminiKeys(); // Charger les cles API depuis localStorage
+  loadOpenRouterKey(); // Charger cle OpenRouter
+  renderIR(); renderAlerts(); renderPhotos();
+  initSpeech(); initBluetooth(); initRelayCards();
+  updateFaceList();
+  if('Notification'in window&&Notification.permission==='default') Notification.requestPermission();
+  if(S.robotIP) setTimeout(()=>connectRobot(),800);
+  setInterval(()=>{ if(S.connected)wsSend({type:'ping'}); },30000);
+  setTimeout(()=>{ const cv=document.getElementById('micCanvas'); if(cv)cv.width=cv.clientWidth; },500);
+  toast('SentriX – Gemini + Mistral actif! Musique via Pi.','info',3000);
+});
+</script>
+</body>
+</html>
